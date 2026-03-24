@@ -15,7 +15,7 @@ signal called_mark_hover_tile(tile: TacticsTile)
 var path_tiles_stack: Array = []
 ## Extra vertical margin applied when checking neighbor step height.
 ## Keeps movement primarily controlled by `stats.jump` while tolerating mesh imprecision.
-@export var step_height_margin: float = 0.25
+@export var step_height_margin: float = 0.75
 ## Tracks temporary bump destination reservations to avoid multiple pawns claiming the same fallback tile.
 var bump_tile_reservations: Dictionary = {}
 

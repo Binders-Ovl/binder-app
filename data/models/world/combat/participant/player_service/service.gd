@@ -121,7 +121,7 @@ func display_attackable_targets() -> void:
 	res.display_opponent_stats = true
 	
 	camera.target = p
-	arena.process_surrounding_tiles(curr_tile, float(p.stats.attack_range), float(p.stats.jump))
+	arena.process_surrounding_tiles(curr_tile, float(p.stats.attack_range), 9999.0, [], false, true)
 	arena.mark_attackable_tiles(curr_tile, float(p.stats.attack_range))
 	res.stage = res.STAGE_SELECT_ATTACK_TARGET
 

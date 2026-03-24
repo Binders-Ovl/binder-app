@@ -41,6 +41,8 @@ func attack_pawn(delta: float, is_player: bool) -> void:
 
 	# Handle case when no attackable pawn is available
 	if not target_pawn:
+		acting_pawn.res.wait_delay = 0.0
+		acting_pawn.res.set_attacking(false)
 		acting_pawn.refresh_action_state()
 	else:
 		# Spend ACT once at the beginning of the attack action.

@@ -30,8 +30,8 @@ func configure_tiles() -> void:
 ## [param root_tile] The central tile to process around
 ## [param height] The height to consider for processing
 ## [param allies_on_map] Array of allied pawns on the map (optional)
-func process_surrounding_tiles(root_tile: TacticsTile, max_distance: float, max_step_height: float, allies_on_map: Array = [], allow_pass_through: bool = false) -> void:
-	serv.process_surrounding_tiles(root_tile, max_distance, max_step_height, allies_on_map, allow_pass_through)
+func process_surrounding_tiles(root_tile: TacticsTile, max_distance: float, max_step_height: float, allies_on_map: Array = [], allow_pass_through: bool = false, ignore_occupancy: bool = false) -> void:
+	serv.process_surrounding_tiles(root_tile, max_distance, max_step_height, allies_on_map, allow_pass_through, ignore_occupancy)
 
 
 ## Returns an array of tiles representing the pathfinding stack to a given tile

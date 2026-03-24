@@ -44,7 +44,7 @@ func configure_tiles(arena: TacticsArena) -> void:
 ## [param root_tile] The starting tile
 ## [param height] The height to consider for neighbors
 ## [param allies_on_map] Array of allied pawns on the map
-func process_surrounding_tiles(root_tile: TacticsTile, max_distance: float, max_step_height: float, allies_on_map: Array = [], allow_pass_through: bool = false) -> void:
+func process_surrounding_tiles(root_tile: TacticsTile, max_distance: float, max_step_height: float, allies_on_map: Array = [], allow_pass_through: bool = false, ignore_occupancy: bool = false) -> void:
 	if not root_tile or not is_instance_valid(root_tile):
 		return
 	var margin: float = maxf(0.0, res.step_height_margin if res else 0.0)
@@ -64,11 +64,13 @@ func process_surrounding_tiles(root_tile: TacticsTile, max_distance: float, max_
 
 		for _neighbor: TacticsTile in _curr_tile.get_neighbors(allowed_step_height):
 			if not _neighbor.pf_root and _neighbor != root_tile:
-				if _can_step_on_or_pass_through(_neighbor, allies_on_map, allow_pass_through):
+				if _can_step_on_or_pass_through(_neighbor, allies_on_map, allow_pass_through, ignore_occupancy):
 					_add_to_tiles_list.call(_neighbor)
 
 
-func _can_step_on_or_pass_through(tile: TacticsTile, allies_on_map: Array, mover_can_fly: bool) -> bool:
+func _can_step_on_or_pass_through(tile: TacticsTile, allies_on_map: Array, mover_can_fly: bool, ignore_occupancy: bool = false) -> bool:
+	if ignore_occupancy:
+		return true
 	if not tile.is_taken():
 		return true
 

@@ -102,7 +102,7 @@ func choose_pawn_to_attack() -> void:
 		res.stage = res.STAGE_SELECT_PAWN
 		return
 	arena.reset_all_tile_markers()
-	arena.process_surrounding_tiles(curr_tile, float(res.curr_pawn.stats.attack_range), float(res.curr_pawn.stats.jump))
+	arena.process_surrounding_tiles(curr_tile, float(res.curr_pawn.stats.attack_range), 9999.0, [], false, true)
 	arena.mark_attackable_tiles(curr_tile, res.curr_pawn.stats.attack_range)
 	
 	res.attackable_pawn = arena.get_weakest_attackable_pawn(res.targets.get_children())

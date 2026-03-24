@@ -88,13 +88,23 @@ func select_pawn_to_attack(ctrl: TacticsControls) -> void:
 		controls.set_actions_menu_visibility(false, participant.attackable_pawn)
 		participant.attackable_pawn.show_pawn_stats(false)
 	var tile: TacticsTile = _select_hovered_tile(ctrl)
-	participant.attackable_pawn = tile.get_tile_occupier() if tile else null
+	var occupier: Object = tile.get_tile_occupier() if tile else null
+	var hovered_target: TacticsPawn = occupier as TacticsPawn
+	participant.attackable_pawn = hovered_target if tile and tile.attackable and _is_valid_attack_target(participant.curr_pawn, hovered_target) else null
 	if participant.attackable_pawn:
 		controls.set_actions_menu_visibility(true, participant.attackable_pawn)
 		participant.attackable_pawn.show_pawn_stats(true)
 	if Input.is_action_just_pressed("ui_accept") and tile and tile.attackable and participant.attackable_pawn:
 		t_cam.target = participant.attackable_pawn
 		participant.stage = participant.STAGE_ATTACK
+
+
+func _is_valid_attack_target(attacker: TacticsPawn, target: TacticsPawn) -> bool:
+	if not attacker or not is_instance_valid(attacker):
+		return false
+	if not target or not is_instance_valid(target) or not target.is_alive():
+		return false
+	return true
 
 
 ## Handles the player's intention to move.

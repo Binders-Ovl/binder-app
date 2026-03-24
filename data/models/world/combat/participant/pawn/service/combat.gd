@@ -10,22 +10,26 @@ extends RefCounted
 ## @param delta: Time elapsed since the last frame
 ## @return: Whether the attack was completed
 func attack_target_pawn(pawn: TacticsPawn, target_pawn: TacticsPawn, delta: float) -> bool:
+	if not target_pawn or not is_instance_valid(target_pawn) or not target_pawn.is_alive():
+		pawn.res.wait_delay = 0.0
+		pawn.res.set_attacking(false)
+		return true
+
 	pawn.res.set_attacking(true)
 	# Make the attacking pawn face the target
 	pawn.serv.movement.look_at_direction(pawn, target_pawn.global_position - pawn.global_position)
-	
-	# Check if the pawn can attack and enough time has passed for the attack animation
-	if pawn.res.wait_delay > TacticsPawnResource.MIN_TIME_FOR_ATTACK / 4.0:
-		# Apply damage to the target pawn
-		target_pawn.stats.apply_to_curr_health(-pawn.stats.attack_power)
-		
-		# Print debug information if debug mode is enabled
-		if DebugLog.debug_enabled:
-			print_rich("[color=pink]Attacked ", target_pawn, " for ", pawn.stats.attack_power, " damage.[/color]")
-		
-	# If the minimum time for attack hasn't passed, increment the wait delay
+
+	var previous_wait_delay: float = pawn.res.wait_delay
 	if pawn.res.wait_delay < TacticsPawnResource.MIN_TIME_FOR_ATTACK:
 		pawn.res.wait_delay += delta
+
+	var hit_frame_time: float = TacticsPawnResource.MIN_TIME_FOR_ATTACK / 4.0
+	if previous_wait_delay <= hit_frame_time and pawn.res.wait_delay > hit_frame_time:
+		target_pawn.stats.apply_to_curr_health(-pawn.stats.attack_power)
+		if DebugLog.debug_enabled:
+			print_rich("[color=pink]Attacked ", target_pawn, " for ", pawn.stats.attack_power, " damage.[/color]")
+
+	if pawn.res.wait_delay < TacticsPawnResource.MIN_TIME_FOR_ATTACK:
 		return false
 	
 	# Reset the wait delay and return true to indicate the attack is complete

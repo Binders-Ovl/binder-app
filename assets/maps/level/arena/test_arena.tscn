@@ -3266,7 +3266,7 @@ transform = Transform3D(1.01, 0, 0, 0, 1.01, 0, 0, 0, 1.01, 0.492, 2.376, -8.5)
 mesh = SubResource("109")
 
 [node name="Tile108" type="MeshInstance3D" parent="Tiles" unique_id=1200497366]
-transform = Transform3D(1.01, 0, 0, 0, 1.01, 0, 0, 0, 1.01, -0.508364, 2.5, -8.5)
+transform = Transform3D(0.8958196, 0.34789732, -0.31076452, -0.27509513, 0.93738264, 0.25639117, 0.3767357, -0.14276281, 0.926169, -0.508364, 2.5, -8.5)
 mesh = SubResource("110")
 
 [node name="Tile109" type="MeshInstance3D" parent="Tiles" unique_id=1540654942]
