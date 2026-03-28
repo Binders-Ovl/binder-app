@@ -21,6 +21,8 @@ static var left_stick_y: float
 
 ## The current position of the mouse cursor
 var mouse_position: Vector2 = Vector2.ZERO
+## Tracks whether a real mouse-motion event has been observed this session.
+static var mouse_motion_seen: bool = false
 ## The current direction of the camera
 static var cam_direction: Vector2
 ## Indicates whether free look input is currently active

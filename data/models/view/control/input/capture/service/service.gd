@@ -29,6 +29,8 @@ func process_input(event: InputEvent) -> void:
 			if event.is_action_released("camera_free_look"):
 				res.free_look_pressed = false
 	if event is InputEventMouseMotion:
+		if event.relative != Vector2.ZERO:
+			InputCaptureResource.mouse_motion_seen = true
 		# free_look motion capture
 		if TacticsCameraResource.in_free_look:
 			TacticsCameraResource.twist_input = -event.relative.x * (FL_ROT_SPEED_DIVIDER * TacticsCameraResource.rot_speed)

@@ -14,7 +14,7 @@ signal called_rotate_camera
 ## Movement speed of the camera
 @export_range(1, 100) var move_speed: int
 ## Rotation speed of the camera
-static var rot_speed: float
+static var rot_speed: float = 1.0
 ## Rotation speed setting, converted to rot_speed
 @export_range(1, 100) var rotation_speed: int:
 	set(val):
@@ -32,7 +32,7 @@ var target: Node3D = null:
 
 #region Zoom
 @export_category("Zoom")
-static var zoom_speed: float
+static var zoom_speed: float = 10.0
 ## Speed of camera zoom
 @export_range(0.01, 1) var camera_zoom_speed: float = 0.5:
 	set(val):
@@ -84,13 +84,13 @@ static var is_rotating: bool = false:
 		is_rotating = val
 		DebugLog.debug_nospam("cam_rotating", val) # Log rotation state
 ## Vertical pitch rotation
-static var x_rot: int # edit for rotation
+static var x_rot: int = -40 # edit for rotation
 ## Vertical pitch rotation
 @export var vertical_rot: int:
 	set(val):
 		x_rot = val
 ## Horizontal twist rotation
-static var y_rot: int # edit for rotation
+static var y_rot: int = 45 # edit for rotation
 @export var horizontal_rot: int:
 	set(val):
 		y_rot = val

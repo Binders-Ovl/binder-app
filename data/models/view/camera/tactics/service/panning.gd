@@ -63,6 +63,14 @@ func refresh_cam_viewport_size(camera: TacticsCamera) -> bool:
 func get_mouse_panning_values() -> Dictionary:
 	var h: float = 0.0
 	var v: float = 0.0
+	var max_x: float = float(res.viewport_size.x - 1)
+	var max_y: float = float(res.viewport_size.y - 1)
+	# Ignore out-of-viewport coordinates and literal 0/edge coordinates, which can
+	# be reported transiently by browsers when canvas focus changes.
+	if res.mouse_pos.x <= 0.0 or res.mouse_pos.y <= 0.0:
+		return {"h": h, "v": v}
+	if res.mouse_pos.x >= max_x or res.mouse_pos.y >= max_y:
+		return {"h": h, "v": v}
 	
 	if res.mouse_pos.x <= res.border_pan_px_threshold:
 		h = -1.0
