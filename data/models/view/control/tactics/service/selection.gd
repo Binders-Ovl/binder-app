@@ -62,16 +62,24 @@ func _select_hovered_tile(ctrl: TacticsControls) -> TacticsTile:
 
 ## Handles the selection of a new location for the current pawn.
 func select_new_location(ctrl: TacticsControls) -> void:
+	_refresh_live_move_context(ctrl)
+	var acting_pawn: TacticsPawn = participant.curr_pawn if participant.curr_pawn and is_instance_valid(participant.curr_pawn) else ctrl.curr_pawn
+	if not acting_pawn or not acting_pawn.is_alive():
+		participant.stage = participant.STAGE_SELECT_PAWN
+		return
 	var tile: TacticsTile = input_service.get_3d_canvas_mouse_position(1, ctrl)
 	arena.mark_hover_tile(tile)
 	if Input.is_action_just_pressed("ui_accept") and tile and tile.reachable:
+		# Recompute once more at confirmation time so queued enemy movement can't leave stale legality.
+		_refresh_live_move_context(ctrl)
 		var path: Array = arena.get_pathfinding_tilestack(tile)
 		if path.is_empty():
 			return
-		if not ctrl.curr_pawn.spend_act(float(TacticsConfig.action_cost.move)):
+		if not acting_pawn.spend_act(float(TacticsConfig.action_cost.move)):
 			return
-		ctrl.curr_pawn.res.mark_move_transaction(ctrl.curr_pawn.global_position)
-		ctrl.curr_pawn.res.pathfinding_tilestack = path
+		acting_pawn.res.mark_move_transaction(acting_pawn.global_position)
+		acting_pawn.res.pathfinding_tilestack = path
+		ctrl.curr_pawn = acting_pawn
 		t_cam.target = tile
 		participant.stage = 4
 
@@ -83,6 +91,7 @@ func select_pawn_to_attack(ctrl: TacticsControls) -> void:
 		participant.stage = participant.STAGE_SELECT_PAWN
 		return
 
+	_refresh_live_attack_context()
 	controls.set_actions_menu_visibility(true, participant.curr_pawn)
 	if participant.attackable_pawn:
 		controls.set_actions_menu_visibility(false, participant.attackable_pawn)
@@ -143,3 +152,35 @@ func player_wants_to_attack() -> void:
 	if not participant.curr_pawn or not participant.curr_pawn.can_pawn_attack():
 		return
 	participant.stage = 5
+
+
+func _refresh_live_move_context(ctrl: TacticsControls) -> void:
+	var pawn: TacticsPawn = participant.curr_pawn if participant.curr_pawn and is_instance_valid(participant.curr_pawn) else ctrl.curr_pawn
+	if not pawn or not is_instance_valid(pawn) or not pawn.is_alive():
+		return
+	var curr_tile: TacticsTile = pawn.get_tile()
+	if not curr_tile:
+		return
+	var arena_node: TacticsArena = pawn.get_node_or_null("%TacticsArena")
+	if not arena_node:
+		return
+
+	arena_node.reset_all_tile_markers()
+	arena_node.process_surrounding_tiles(curr_tile, float(pawn.stats.movement), float(pawn.stats.jump), pawn.get_parent().get_children(), pawn.stats.can_fly)
+	arena_node.mark_reachable_tiles(curr_tile, pawn.stats.movement)
+
+
+func _refresh_live_attack_context() -> void:
+	var pawn: TacticsPawn = participant.curr_pawn
+	if not pawn or not is_instance_valid(pawn) or not pawn.is_alive():
+		return
+	var curr_tile: TacticsTile = pawn.get_tile()
+	if not curr_tile:
+		return
+	var arena_node: TacticsArena = pawn.get_node_or_null("%TacticsArena")
+	if not arena_node:
+		return
+
+	arena_node.reset_all_tile_markers()
+	arena_node.process_surrounding_tiles(curr_tile, float(pawn.stats.attack_range), 9999.0, [], false, true)
+	arena_node.mark_attackable_tiles(curr_tile, float(pawn.stats.attack_range))

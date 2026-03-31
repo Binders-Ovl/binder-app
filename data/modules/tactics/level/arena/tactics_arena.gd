@@ -74,3 +74,13 @@ func mark_reachable_tiles(root: TacticsTile, distance: float) -> void:
 ## [param distance] The maximum attack distance
 func mark_attackable_tiles(root: TacticsTile, distance: float) -> void:
 	serv.mark_attackable_tiles(self, root, distance)
+
+
+## Captures mutable navigation/overlay state for temporary planning operations.
+func capture_navigation_state() -> Dictionary:
+	return serv.capture_navigation_state(self)
+
+
+## Restores mutable navigation/overlay state from a previous capture.
+func restore_navigation_state(state: Dictionary) -> void:
+	serv.restore_navigation_state(state)

@@ -55,6 +55,7 @@ func start_movement(pawn: TacticsPawn) -> void:
 			pawn.res.move_origin_position = pawn.global_position
 			pawn.res.has_move_origin = true
 		pawn.res.move_direction = pawn.res.pathfinding_tilestack.front() - pawn.global_position
+		_reserve_next_tile_for_movement(pawn)
 
 
 ## Performs the actual movement of the pawn
@@ -87,6 +88,7 @@ func calculate_speed(pawn: TacticsPawn) -> float:
 ##
 ## @param pawn: The TacticsPawn to reset
 func reset_movement_state(pawn: TacticsPawn) -> void:
+	_release_reserved_move_tile(pawn)
 	pawn.res.move_direction = Vector3.ZERO
 	pawn.res.is_jumping = false
 	pawn.res.gravity = Vector3.ZERO
@@ -214,6 +216,12 @@ func _can_advance_to_next_tile(pawn: TacticsPawn) -> bool:
 	if not next_tile:
 		_recover_to_nearest_valid_tile(pawn)
 		return false
+	if _is_next_tile_reserved_by_other(pawn, next_tile):
+		_bump_and_stop_when_blocked(pawn, pawn)
+		return false
+	if not _reserve_specific_tile_for_pawn(pawn, next_tile):
+		_bump_and_stop_when_blocked(pawn, pawn)
+		return false
 
 	var occupier_obj: Object = next_tile.get_tile_occupier()
 	if occupier_obj == null or occupier_obj == pawn:
@@ -232,11 +240,8 @@ func _can_advance_to_next_tile(pawn: TacticsPawn) -> bool:
 	return false
 
 
-func _can_pass_through_occupier(mover: TacticsPawn, occupier: TacticsPawn) -> bool:
-	if _is_same_team(mover, occupier):
-		return true
-	# FLY x Ground = PASS, FLY x FLY = BUMP
-	return mover.stats.can_fly and not occupier.stats.can_fly
+func _can_pass_through_occupier(_mover: TacticsPawn, _occupier: TacticsPawn) -> bool:
+	return false
 
 
 func _find_tile_by_position(pawn: TacticsPawn, position: Vector3) -> TacticsTile:
@@ -281,6 +286,7 @@ func _recover_to_nearest_valid_tile(pawn: TacticsPawn) -> void:
 func _revert_failed_move_transaction(pawn: TacticsPawn) -> void:
 	var arena: TacticsArena = pawn.get_node_or_null("%TacticsArena")
 	if arena:
+		arena.res.release_all_move_tiles_for_pawn(pawn)
 		arena.res.release_all_bump_tiles_for_pawn(pawn)
 	pawn.res.pathfinding_tilestack.clear()
 	reset_movement_state(pawn)
@@ -297,6 +303,7 @@ func _revert_failed_move_transaction(pawn: TacticsPawn) -> void:
 func _finalize_move_transaction(pawn: TacticsPawn) -> void:
 	var arena: TacticsArena = pawn.get_node_or_null("%TacticsArena")
 	if arena:
+		arena.res.release_all_move_tiles_for_pawn(pawn)
 		arena.res.release_all_bump_tiles_for_pawn(pawn)
 	pawn.res.clear_move_transaction()
 
@@ -323,3 +330,44 @@ func _is_same_team(a: TacticsPawn, b: TacticsPawn) -> bool:
 	if not is_instance_valid(a) or not is_instance_valid(b):
 		return false
 	return a.get_parent() == b.get_parent()
+
+
+func _reserve_next_tile_for_movement(pawn: TacticsPawn) -> bool:
+	if pawn.res.pathfinding_tilestack.is_empty():
+		return false
+	var next_tile: TacticsTile = _find_tile_by_position(pawn, pawn.res.pathfinding_tilestack.front())
+	if not next_tile:
+		return false
+	return _reserve_specific_tile_for_pawn(pawn, next_tile)
+
+
+func _reserve_specific_tile_for_pawn(pawn: TacticsPawn, tile: TacticsTile) -> bool:
+	if not tile:
+		return false
+	var arena: TacticsArena = pawn.get_node_or_null("%TacticsArena")
+	if not arena:
+		return false
+	if pawn.res.reserved_move_tile == tile:
+		return true
+	if not arena.res.reserve_move_tile(tile, pawn):
+		return false
+	_release_reserved_move_tile(pawn)
+	pawn.res.reserved_move_tile = tile
+	return true
+
+
+func _release_reserved_move_tile(pawn: TacticsPawn) -> void:
+	var reserved_tile: TacticsTile = pawn.res.reserved_move_tile
+	if not reserved_tile:
+		return
+	var arena: TacticsArena = pawn.get_node_or_null("%TacticsArena")
+	if arena:
+		arena.res.release_move_tile(reserved_tile, pawn)
+	pawn.res.reserved_move_tile = null
+
+
+func _is_next_tile_reserved_by_other(pawn: TacticsPawn, tile: TacticsTile) -> bool:
+	var arena: TacticsArena = pawn.get_node_or_null("%TacticsArena")
+	if not arena:
+		return false
+	return arena.res.is_move_tile_reserved_by_other(tile, pawn)

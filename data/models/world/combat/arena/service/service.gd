@@ -25,6 +25,49 @@ func setup(arena: TacticsArena) -> void:
 		res.connect("called_mark_hover_tile", arena.mark_hover_tile)
 
 
+## Captures mutable tile/pathfinding state so temporary computations can be restored.
+func capture_navigation_state(arena: TacticsArena) -> Dictionary:
+	var state: Dictionary = {
+		"tiles": {},
+		"path_tiles_stack": []
+	}
+	if not arena or not is_instance_valid(arena):
+		return state
+
+	var tiles_state: Dictionary = {}
+	for tile: TacticsTile in arena.get_node("Tiles").get_children():
+		tiles_state[tile.get_instance_id()] = {
+			"tile": tile,
+			"hover": tile.hover,
+			"reachable": tile.reachable,
+			"attackable": tile.attackable,
+			"pf_root": tile.pf_root,
+			"pf_distance": tile.pf_distance
+		}
+	state["tiles"] = tiles_state
+	if res:
+		state["path_tiles_stack"] = res.path_tiles_stack.duplicate()
+	return state
+
+
+## Restores tile/pathfinding state previously captured by capture_navigation_state().
+func restore_navigation_state(state: Dictionary) -> void:
+	var tiles_state: Dictionary = state.get("tiles", {})
+	for key: int in tiles_state.keys():
+		var tile_state: Dictionary = tiles_state[key]
+		var tile: TacticsTile = tile_state.get("tile", null)
+		if not tile or not is_instance_valid(tile):
+			continue
+		tile.hover = tile_state.get("hover", false)
+		tile.reachable = tile_state.get("reachable", false)
+		tile.attackable = tile_state.get("attackable", false)
+		tile.pf_root = tile_state.get("pf_root", null)
+		tile.pf_distance = tile_state.get("pf_distance", 0.0)
+
+	if res:
+		res.path_tiles_stack = state.get("path_tiles_stack", []).duplicate()
+
+
 ## Reset markers for all tiles in the arena
 ## [param arena] The TacticsArena containing the tiles
 func reset_all_tile_markers(arena: TacticsArena) -> void:
@@ -68,21 +111,14 @@ func process_surrounding_tiles(root_tile: TacticsTile, max_distance: float, max_
 					_add_to_tiles_list.call(_neighbor)
 
 
-func _can_step_on_or_pass_through(tile: TacticsTile, allies_on_map: Array, mover_can_fly: bool, ignore_occupancy: bool = false) -> bool:
+func _can_step_on_or_pass_through(tile: TacticsTile, _allies_on_map: Array, _mover_can_fly: bool, ignore_occupancy: bool = false) -> bool:
 	if ignore_occupancy:
 		return true
+	if res and res.is_move_tile_reserved(tile):
+		return false
 	if not tile.is_taken():
 		return true
 
-	var occupier: Object = tile.get_tile_occupier()
-	if occupier is TacticsPawn and occupier in allies_on_map:
-		# Same-team units always pass through each other.
-		return true
-	if not mover_can_fly:
-		return false
-	if occupier is TacticsPawn and is_instance_valid(occupier):
-		# FLY x Ground = PASS, FLY x FLY = BUMP
-		return not occupier.stats.can_fly
 	return false
 
 

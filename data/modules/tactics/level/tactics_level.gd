@@ -79,6 +79,8 @@ func _tick_all_pawn_energy(delta: float) -> void:
 func _process_enemy_timeline_actions() -> void:
 	var enemy_pawns: Array = opponent.get_children()
 	var player_pawns: Array = player.get_children()
+	var nav_state: Dictionary = arena.capture_navigation_state()
+	var consumed_action: bool = false
 
 	for enemy_pawn: TacticsPawn in enemy_pawns:
 		if not is_instance_valid(enemy_pawn) or not enemy_pawn.is_alive() or enemy_pawn.res.is_moving or enemy_pawn.res.is_attacking:
@@ -89,7 +91,8 @@ func _process_enemy_timeline_actions() -> void:
 		if attack_target and enemy_pawn.spend_act(float(TacticsConfig.action_cost.attack)):
 			attack_target.stats.apply_to_curr_health(-enemy_pawn.stats.attack_power)
 			enemy_pawn.refresh_action_state()
-			return
+			consumed_action = true
+			break
 
 		if enemy_pawn.can_pawn_move():
 			var enemy_tile: TacticsTile = enemy_pawn.get_tile()
@@ -107,7 +110,12 @@ func _process_enemy_timeline_actions() -> void:
 					enemy_pawn.res.mark_move_transaction(enemy_pawn.global_position)
 					enemy_pawn.res.pathfinding_tilestack = path
 					enemy_pawn.refresh_action_state()
-					return
+					consumed_action = true
+					break
+
+	arena.restore_navigation_state(nav_state)
+	if consumed_action:
+		return
 
 func _nearest_attackable_target(attacker: TacticsPawn, targets: Array) -> TacticsPawn:
 	var nearest: TacticsPawn = null

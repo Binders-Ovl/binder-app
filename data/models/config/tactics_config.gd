@@ -27,7 +27,7 @@ static var mat_color: Dictionary = {
 ## Dictionary of pawn-related configuration values.
 static var pawn: Dictionary = {
 	"base_walk_speed": 8, ## Base speed for pawn movement on the board
-	"animation_frames": 1, ## Number of frames for pawn animations
+	"animation_frames": 0.2, ## Number of frames for pawn animations
 	"min_height_to_jump": 1, ## The tile height from which we use JUMP pawn animation
 	"gravity_strength": 6, ## Force of gravity used in jump & fall physics
 	"min_time_for_attack": 1, ## Minimum time required for an attack action
@@ -36,8 +36,8 @@ static var pawn: Dictionary = {
 ## Dictionary for the active timeline energy model.
 static var active_timeline: Dictionary = {
 	"max_act": 100.0, ## ACT gauge cap
-	"base_recovery": 5.0, ## Base ACT recovered per second
-	"sta_multiplier": 0.35, ## STA contribution to ACT recovered per second
+	"base_recovery": 2.5, ## Base ACT recovered per second
+	"sta_multiplier": 1.35, ## STA contribution to ACT recovered per second
 }
 
 ## Dictionary of ACT costs per action type.

@@ -18,6 +18,8 @@ var path_tiles_stack: Array = []
 @export var step_height_margin: float = 0.75
 ## Tracks temporary bump destination reservations to avoid multiple pawns claiming the same fallback tile.
 var bump_tile_reservations: Dictionary = {}
+## Tracks temporary movement destination reservations so in-transit pawns remain solid blockers.
+var move_tile_reservations: Dictionary = {}
 
 
 ## Triggers the reset of all tile markers
@@ -86,3 +88,59 @@ func _prune_invalid_bump_reservations() -> void:
 			keys_to_erase.append(key)
 	for key: int in keys_to_erase:
 		bump_tile_reservations.erase(key)
+
+
+func reserve_move_tile(tile: TacticsTile, pawn: TacticsPawn) -> bool:
+	if not tile or not pawn:
+		return false
+	_prune_invalid_move_reservations()
+	var key: int = tile.get_instance_id()
+	if move_tile_reservations.has(key):
+		return move_tile_reservations[key] == pawn.get_instance_id()
+	move_tile_reservations[key] = pawn.get_instance_id()
+	return true
+
+
+func release_move_tile(tile: TacticsTile, pawn: TacticsPawn) -> void:
+	if not tile or not pawn:
+		return
+	var key: int = tile.get_instance_id()
+	if move_tile_reservations.get(key, -1) == pawn.get_instance_id():
+		move_tile_reservations.erase(key)
+
+
+func release_all_move_tiles_for_pawn(pawn: TacticsPawn) -> void:
+	if not pawn:
+		return
+	var owner_id: int = pawn.get_instance_id()
+	var keys_to_erase: Array[int] = []
+	for key: int in move_tile_reservations.keys():
+		if move_tile_reservations[key] == owner_id:
+			keys_to_erase.append(key)
+	for key: int in keys_to_erase:
+		move_tile_reservations.erase(key)
+
+
+func is_move_tile_reserved_by_other(tile: TacticsTile, pawn: TacticsPawn) -> bool:
+	if not tile or not pawn:
+		return false
+	_prune_invalid_move_reservations()
+	var key: int = tile.get_instance_id()
+	return move_tile_reservations.has(key) and move_tile_reservations[key] != pawn.get_instance_id()
+
+
+func is_move_tile_reserved(tile: TacticsTile) -> bool:
+	if not tile:
+		return false
+	_prune_invalid_move_reservations()
+	return move_tile_reservations.has(tile.get_instance_id())
+
+
+func _prune_invalid_move_reservations() -> void:
+	var keys_to_erase: Array[int] = []
+	for key: int in move_tile_reservations.keys():
+		var owner_id: int = move_tile_reservations[key]
+		if owner_id == 0:
+			keys_to_erase.append(key)
+	for key: int in keys_to_erase:
+		move_tile_reservations.erase(key)

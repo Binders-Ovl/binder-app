@@ -10,5 +10,5 @@ sprite = "res://assets/textures/actor/character/chr_pawn_knight.png"
 jump = 1.0
 max_health = 500
 max_mana = 12
-sta = 8
+sta = 20
 attack_power = 20

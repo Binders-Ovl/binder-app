@@ -43,6 +43,8 @@ var move_origin_position: Vector3 = Vector3.ZERO
 var has_move_origin: bool = false
 ## Whether move ACT was spent for the current pending move.
 var move_act_spent: bool = false
+## Reserved destination tile while traversing between tiles (keeps movers solid to others).
+var reserved_move_tile: TacticsTile = null
 ## Delay before the pawn can perform its next action
 var wait_delay: float = 0.0
 ## Speed at which the pawn walks
@@ -90,3 +92,4 @@ func clear_move_transaction() -> void:
 	move_origin_position = Vector3.ZERO
 	has_move_origin = false
 	move_act_spent = false
+	reserved_move_tile = null
