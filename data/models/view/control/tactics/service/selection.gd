@@ -75,6 +75,8 @@ func select_new_location(ctrl: TacticsControls) -> void:
 		var path: Array = arena.get_pathfinding_tilestack(tile)
 		if path.is_empty():
 			return
+		if not _path_has_movement(path, acting_pawn.global_position):
+			return
 		if not acting_pawn.spend_act(float(TacticsConfig.action_cost.move)):
 			return
 		acting_pawn.res.mark_move_transaction(acting_pawn.global_position)
@@ -184,3 +186,10 @@ func _refresh_live_attack_context() -> void:
 	arena_node.reset_all_tile_markers()
 	arena_node.process_surrounding_tiles(curr_tile, float(pawn.stats.attack_range), 9999.0, [], false, true)
 	arena_node.mark_attackable_tiles(curr_tile, float(pawn.stats.attack_range))
+
+
+func _path_has_movement(path: Array, from_position: Vector3) -> bool:
+	for step: Variant in path:
+		if step is Vector3 and from_position.distance_to(step) > 0.02:
+			return true
+	return false
