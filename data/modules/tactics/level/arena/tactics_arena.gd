@@ -83,4 +83,4 @@ func capture_navigation_state() -> Dictionary:
 
 ## Restores mutable navigation/overlay state from a previous capture.
 func restore_navigation_state(state: Dictionary) -> void:
-	serv.restore_navigation_state(state)
+	serv.restore_navigation_state(self, state)

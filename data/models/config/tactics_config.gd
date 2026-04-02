@@ -6,28 +6,48 @@ extends Node3D
 ## of the tactics system, including colors, materials, pawn properties, and view settings.
 
 #region: --- Props ---
-## Dictionary of color codes used in the tactics system.
+## Dictionary of color codes used in the tactics system. ff4242BF
 static var color: Dictionary = {
-	"white": "FFFFFF3F", # Semi-transparent white
+	"white": "FFFFFF2A", # Semi-transparent white
 	"blue_cola": "008fdbBF", # Semi-transparent blue cola color
 	"blue_bolt": "0aa9ffBF", # Semi-transparent blue bolt color
 	"rosso_corsa": "d10000BF", # Semi-transparent rosso corsa (racing red) color
 	"coral_red": "ff4242BF", # Semi-transparent coral red color
 }
 
+## Shared selector overlay tuning
+static var tile_overlay_surface_offset: float = 0.04
+static var selector_overlay_texture: Texture2D = preload("res://assets/textures/ui/arena_gui/selector_overlay.png")
+static var selector_overlay_opacity: float = 0.55
+
+## Optional move-risk overlay tuning
+static var enable_purple_move_target_overlay: bool = false
+static var move_risk_purple_color: Color = Color("A46BFFB8")
+
+## Backward-compatible aliases
+static var overlay_texture: Texture2D = selector_overlay_texture
+static var overlay_material: StandardMaterial3D = create_material(
+	Color(1.0, 1.0, 1.0, selector_overlay_opacity),
+	selector_overlay_texture,
+	BaseMaterial3D.SHADING_MODE_UNSHADED
+)
+
+
 ## Dictionary of materials used for different states in the tactics system.
 static var mat_color: Dictionary = {
 	"hover": create_material(str(color.white)),
 	"reachable": create_material(str(color.blue_cola)),
 	"reachable_hover": create_material(str(color.blue_bolt)),
+	"reachable_threatened": create_material(move_risk_purple_color),
+	"hover_reachable_threatened": create_material(move_risk_purple_color.lightened(0.18)),
 	"attackable": create_material(str(color.rosso_corsa)),
 	"hover_attackable": create_material(str(color.coral_red)),
 }
 
 ## Dictionary of pawn-related configuration values.
 static var pawn: Dictionary = {
-	"base_walk_speed": 8, ## Base speed for pawn movement on the board
-	"animation_frames": 0.2, ## Number of frames for pawn animations
+	"base_walk_speed": 4, ## Base speed for pawn movement on the board
+	"animation_frames": 1, ## Number of frames for pawn animations
 	"min_height_to_jump": 1, ## The tile height from which we use JUMP pawn animation
 	"gravity_strength": 6, ## Force of gravity used in jump & fall physics
 	"min_time_for_attack": 1, ## Minimum time required for an attack action
@@ -69,7 +89,10 @@ static var ui_elem: Array[String] = [
 static func create_material(color_hex: Variant, texture: Texture2D = null, shaded_mode: BaseMaterial3D.ShadingMode = BaseMaterial3D.SHADING_MODE_PER_PIXEL) -> StandardMaterial3D:
 	var material: StandardMaterial3D = StandardMaterial3D.new()
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA # Set material to use alpha transparency
-	material.albedo_color = Color(str(color_hex)) # Set the material color
+	if color_hex is Color:
+		material.albedo_color = color_hex # Set the material color
+	else:
+		material.albedo_color = Color(str(color_hex)) # Set the material color
 	material.albedo_texture = texture # Set the albedo texture (if provided)
 	material.shading_mode = shaded_mode # Set the shading mode
 	return material

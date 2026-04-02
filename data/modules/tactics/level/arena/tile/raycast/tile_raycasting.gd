@@ -7,6 +7,7 @@ extends Node3D
 
 const RAMP_HEIGHT_TOLERANCE: float = 1.2
 const SLOPE_NORMAL_Y_THRESHOLD: float = 0.98
+const OVERLAY_RAYCAST_HEIGHT: float = 3.0
 
 
 #region: --- Methods ---
@@ -38,4 +39,38 @@ func get_all_neighbors(height: float) -> Array[Node3D]:
 ## [returns] The object above the tile, or null if none found.
 func get_object_above() -> Object:
 	return $Above.get_collider() # Return object hit by the upward-facing ray
+
+
+## Returns a world-space overlay anchor aligned to this tile's real collision normal.
+## [param offset] Surface offset applied along the hit normal.
+## [returns] Dictionary with position, normal and tile.
+func get_overlay_anchor(offset: float = TacticsConfig.tile_overlay_surface_offset) -> Dictionary:
+	var tile: TacticsTile = get_parent() as TacticsTile
+	if not tile:
+		return {}
+
+	var origin: Vector3 = tile.global_position + Vector3.UP * OVERLAY_RAYCAST_HEIGHT
+	var target: Vector3 = tile.global_position + Vector3.DOWN * OVERLAY_RAYCAST_HEIGHT
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(origin, target)
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	query.collision_mask = tile.collision_layer
+
+	var result: Dictionary = tile.get_world_3d().direct_space_state.intersect_ray(query)
+	if result.is_empty():
+		return {
+			"position": tile.global_position + Vector3.UP * maxf(0.0, offset),
+			"normal": Vector3.UP,
+			"tile": tile,
+		}
+
+	var normal: Vector3 = (result.get("normal", Vector3.UP) as Vector3).normalized()
+	if normal == Vector3.ZERO:
+		normal = Vector3.UP
+	var hit_position: Vector3 = result.get("position", tile.global_position)
+	return {
+		"position": hit_position + normal * maxf(0.0, offset),
+		"normal": normal,
+		"tile": tile,
+	}
 #endregion

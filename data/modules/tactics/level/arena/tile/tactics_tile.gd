@@ -16,6 +16,8 @@ var reachable: bool = false
 var attackable: bool = false
 ## Whether the tile is being hovered over
 var hover: bool = false
+## Whether moving here would place the active unit in opponent attack range
+var threatened_move: bool = false
 
 ## Pathfinding starting point.[br]Used by [TacticsArena]
 var pf_root: TacticsTile
@@ -28,6 +30,10 @@ var hover_mat: StandardMaterial3D = TacticsConfig.mat_color.hover
 var reachable_mat: StandardMaterial3D = TacticsConfig.mat_color.reachable
 ## Material for hover and reachable state
 var hover_reachable_mat: StandardMaterial3D = TacticsConfig.mat_color.reachable_hover
+## Material for reachable move-risk state
+var reachable_threatened_mat: StandardMaterial3D = TacticsConfig.mat_color.reachable_threatened
+## Material for hover + reachable move-risk state
+var hover_reachable_threatened_mat: StandardMaterial3D = TacticsConfig.mat_color.hover_reachable_threatened
 ## Material for attackable state
 var attackable_mat: StandardMaterial3D = TacticsConfig.mat_color.attackable
 ## Material for hover and attackable state
@@ -42,22 +48,28 @@ func _process(_delta: float) -> void:
 	if not tile:
 		return # If the "Tile" node wasn't found, the function exits early to avoid errors.
 	
-	# Set visibility of the tile to visible if attackable, reachable, or hover are true.
-	tile.visible = attackable or reachable or hover # Set visibility based on tile state
+	# Set visibility based on current tactical states.
+	tile.visible = attackable or reachable or hover or threatened_move
 	
 	match hover:
 		true: # If hover is true, decide which material to use based on the tile's state
-			if reachable:
+			if reachable and threatened_move:
+				tile.material_override = hover_reachable_threatened_mat
+			elif reachable:
 				tile.material_override = hover_reachable_mat
 			elif attackable:
 				tile.material_override = hover_attackable_mat
 			else:
 				tile.material_override = hover_mat
 		false: # If hover is false, this block decides between two materials
-			if reachable:
+			if reachable and threatened_move:
+				tile.material_override = reachable_threatened_mat
+			elif reachable:
 				tile.material_override = reachable_mat
 			elif attackable:
 				tile.material_override = attackable_mat
+			else:
+				tile.material_override = null
 #endregion
 
 #region: --- Methods ---
@@ -75,6 +87,14 @@ func get_tile_occupier() -> Object:
 	return occupier
 
 
+## Returns world-space overlay anchor data (position, normal, tile) for shared selector placement.
+func get_overlay_anchor(offset: float = TacticsConfig.tile_overlay_surface_offset) -> Dictionary:
+	var raycasting: TacticsTileRaycast = $RayCasting as TacticsTileRaycast
+	if not raycasting:
+		return {}
+	return raycasting.get_overlay_anchor(offset)
+
+
 ## Return whether target tile is occupied
 func is_taken() -> bool:
 	return get_tile_occupier() != null
@@ -87,6 +107,7 @@ func reset_markers() -> void:
 	pf_distance = 0
 	reachable = false
 	attackable = false
+	threatened_move = false
 
 
 ## Initializes tile (disable hover, instantiate raycast & reset state)
