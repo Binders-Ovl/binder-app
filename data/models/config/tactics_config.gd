@@ -16,12 +16,12 @@ static var color: Dictionary = {
 }
 
 ## Shared selector overlay tuning
-static var tile_overlay_surface_offset: float = 0.04
+static var tile_overlay_surface_offset: float = 0.065
 static var selector_overlay_texture: Texture2D = preload("res://assets/textures/ui/arena_gui/selector_overlay.png")
-static var selector_overlay_opacity: float = 0.55
+static var selector_overlay_opacity: float = 0.95
 
 ## Optional move-risk overlay tuning
-static var enable_purple_move_target_overlay: bool = false
+static var enable_purple_move_target_overlay: bool = true
 static var move_risk_purple_color: Color = Color("A46BFFB8")
 
 ## Backward-compatible aliases
@@ -29,7 +29,7 @@ static var overlay_texture: Texture2D = selector_overlay_texture
 static var overlay_material: StandardMaterial3D = create_material(
 	Color(1.0, 1.0, 1.0, selector_overlay_opacity),
 	selector_overlay_texture,
-	BaseMaterial3D.SHADING_MODE_UNSHADED
+	BaseMaterial3D.SHADING_MODE_PER_PIXEL
 )
 
 

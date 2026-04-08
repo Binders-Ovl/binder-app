@@ -246,6 +246,12 @@ func mark_attackable_tiles(arena: TacticsArena, root: TacticsTile, distance: flo
 	_refresh_active_tile_overlays(arena)
 
 
+## Build tile-based attack footprint for one pawn.
+## [returns] Dictionary keyed by tile instance id.
+func build_attack_footprint(pawn: TacticsPawn) -> Dictionary:
+	return _build_attack_footprint_for_pawn(pawn)
+
+
 func _ensure_selector_overlay(arena: TacticsArena) -> void:
 	var root: Node3D = _get_selector_overlay_root(arena)
 	if not root:
@@ -461,38 +467,53 @@ func _build_opponent_threat_map(mover: TacticsPawn) -> Dictionary:
 	var threat_map: Dictionary = {}
 	var opponents: Array[TacticsPawn] = _get_opponent_pawns(mover)
 	for opponent: TacticsPawn in opponents:
-		var origin_tile: TacticsTile = opponent.get_tile()
-		if not origin_tile:
-			continue
-		var attack_range: int = maxi(0, int(opponent.stats.attack_range))
-		var visited: Dictionary = {origin_tile.get_instance_id(): 0}
-		var queue: Array[TacticsTile] = [origin_tile]
-
-		while not queue.is_empty():
-			var popped: Variant = queue.pop_front()
-			if not (popped is TacticsTile):
-				continue
-			var tile: TacticsTile = popped as TacticsTile
-			if not is_instance_valid(tile):
-				continue
-			var dist: int = int(visited.get(tile.get_instance_id(), 0))
-			threat_map[tile.get_instance_id()] = true
-			if dist >= attack_range:
-				continue
-
-			for neighbor_variant: Variant in tile.get_neighbors(TILE_NEIGHBOR_SCAN_HEIGHT):
-				if not (neighbor_variant is TacticsTile):
-					continue
-				var neighbor: TacticsTile = neighbor_variant as TacticsTile
-				if not is_instance_valid(neighbor):
-					continue
-				var key: int = neighbor.get_instance_id()
-				if visited.has(key):
-					continue
-				visited[key] = dist + 1
-				queue.push_back(neighbor)
+		var footprint: Dictionary = _build_attack_footprint_for_pawn(opponent)
+		for tile_id: int in footprint.keys():
+			threat_map[tile_id] = true
 
 	return threat_map
+
+
+func _build_attack_footprint_for_pawn(attacker: TacticsPawn) -> Dictionary:
+	var footprint: Dictionary = {}
+	if not attacker or not is_instance_valid(attacker) or not attacker.is_alive():
+		return footprint
+
+	var origin_tile: TacticsTile = attacker.get_tile()
+	if not origin_tile or not is_instance_valid(origin_tile):
+		return footprint
+
+	var attack_range: int = maxi(0, int(attacker.stats.attack_range))
+	var visited: Dictionary = {origin_tile.get_instance_id(): 0}
+	var queue: Array[TacticsTile] = [origin_tile]
+
+	while not queue.is_empty():
+		var popped: Variant = queue.pop_front()
+		if not (popped is TacticsTile):
+			continue
+		var tile: TacticsTile = popped as TacticsTile
+		if not is_instance_valid(tile):
+			continue
+
+		var tile_id: int = tile.get_instance_id()
+		var dist: int = int(visited.get(tile_id, 0))
+		footprint[tile_id] = true
+		if dist >= attack_range:
+			continue
+
+		for neighbor_variant: Variant in tile.get_neighbors(TILE_NEIGHBOR_SCAN_HEIGHT):
+			if not (neighbor_variant is TacticsTile):
+				continue
+			var neighbor: TacticsTile = neighbor_variant as TacticsTile
+			if not is_instance_valid(neighbor):
+				continue
+			var key: int = neighbor.get_instance_id()
+			if visited.has(key):
+				continue
+			visited[key] = dist + 1
+			queue.push_back(neighbor)
+
+	return footprint
 
 
 func _get_opponent_pawns(mover: TacticsPawn) -> Array[TacticsPawn]:

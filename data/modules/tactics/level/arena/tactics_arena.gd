@@ -76,6 +76,11 @@ func mark_attackable_tiles(root: TacticsTile, distance: float) -> void:
 	serv.mark_attackable_tiles(self, root, distance)
 
 
+## Returns tile-based attack footprint for a pawn (tile instance id -> true).
+func get_attack_footprint(pawn: TacticsPawn) -> Dictionary:
+	return serv.build_attack_footprint(pawn)
+
+
 ## Captures mutable navigation/overlay state for temporary planning operations.
 func capture_navigation_state() -> Dictionary:
 	return serv.capture_navigation_state(self)

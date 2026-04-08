@@ -118,15 +118,22 @@ func _process_enemy_timeline_actions() -> void:
 		return
 
 func _nearest_attackable_target(attacker: TacticsPawn, targets: Array) -> TacticsPawn:
+	var attack_footprint: Dictionary = arena.get_attack_footprint(attacker)
+	if attack_footprint.is_empty():
+		return null
+
 	var nearest: TacticsPawn = null
 	var nearest_distance: float = INF
 	for target: TacticsPawn in targets:
 		if not is_instance_valid(target) or not target.is_alive():
 			continue
+		var target_tile: TacticsTile = target.get_tile()
+		if not target_tile or not attack_footprint.has(target_tile.get_instance_id()):
+			continue
 		var horizontal_dist: float = Vector2(attacker.global_position.x, attacker.global_position.z).distance_to(
 			Vector2(target.global_position.x, target.global_position.z)
 		)
-		if horizontal_dist <= float(attacker.stats.attack_range) + 0.45 and horizontal_dist < nearest_distance:
+		if horizontal_dist < nearest_distance:
 			nearest = target
 			nearest_distance = horizontal_dist
 	return nearest
