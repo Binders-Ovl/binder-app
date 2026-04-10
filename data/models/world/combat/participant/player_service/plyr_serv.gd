@@ -2,6 +2,8 @@ class_name TacticsPlayerService
 extends RefCounted
 ## Service class for TacticsPlayer
 
+const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
+
 ## Resource containing participant data and configurations
 var res: TacticsParticipantResource
 ## Resource for camera-related data and configurations
@@ -35,8 +37,10 @@ func _get_active_pawn() -> TacticsPawn:
 func _fallback_to_pawn_selection() -> void:
 	res.curr_pawn = null
 	res.attackable_pawn = null
+	res.clear_attack_selection()
 	res.display_opponent_stats = false
 	controls.set_actions_menu_visibility(false, null)
+	controls.set_attack_types_menu_visibility(false, null)
 	res.stage = res.STAGE_SELECT_PAWN
 
 
@@ -117,12 +121,20 @@ func display_attackable_targets() -> void:
 	if not curr_tile:
 		_fallback_to_pawn_selection()
 		return
+
+	var attack_profile = res.selected_attack
+	if attack_profile == null:
+		res.stage = res.STAGE_SELECT_ATTACK_TYPE
+		return
 	
 	res.display_opponent_stats = true
 	
 	camera.target = p
-	arena.process_surrounding_tiles(curr_tile, float(p.stats.attack_range), 9999.0, [], false, true)
-	arena.mark_attackable_tiles(curr_tile, float(p.stats.attack_range))
+	var attack_range: float = float(attack_profile.range)
+	if attack_profile.area and int(attack_profile.area.get("targeting_mode")) == COMBAT_CONFIG.AreaTargetingMode.SELF_CENTERED:
+		attack_range = 0.0
+	arena.process_surrounding_tiles(curr_tile, attack_range, 9999.0, [], false, true)
+	arena.mark_attackable_tiles(curr_tile, attack_range)
 	res.stage = res.STAGE_SELECT_ATTACK_TARGET
 
 

@@ -38,26 +38,40 @@ func handle_player_turn(delta: float, player: TacticsPlayer, participant: Tactic
 		res.STAGE_SHOW_MOVEMENTS,
 		res.STAGE_SELECT_LOCATION,
 		res.STAGE_MOVE_PAWN,
+		res.STAGE_SELECT_ATTACK_TYPE,
 		res.STAGE_DISPLAY_TARGETS,
 		res.STAGE_SELECT_ATTACK_TARGET,
-		res.STAGE_ATTACK
+		res.STAGE_ATTACK,
 	]
 	if uses_current_pawn:
 		if not res.curr_pawn or not is_instance_valid(res.curr_pawn) or not res.curr_pawn.is_alive():
 			res.curr_pawn = null
 			res.attackable_pawn = null
 			res.display_opponent_stats = false
+			res.clear_attack_selection()
 			res.stage = res.STAGE_SELECT_PAWN
-	
+
 	controls.move_camera(delta)
-	controls.set_actions_menu_visibility(res.stage in [res.STAGE_SHOW_ACTIONS, res.STAGE_SHOW_MOVEMENTS, res.STAGE_SELECT_LOCATION, res.STAGE_DISPLAY_TARGETS, res.STAGE_SELECT_ATTACK_TARGET], res.curr_pawn)
-	
+	controls.set_actions_menu_visibility(
+		res.stage in [
+			res.STAGE_SHOW_ACTIONS,
+			res.STAGE_SHOW_MOVEMENTS,
+			res.STAGE_SELECT_LOCATION,
+			res.STAGE_SELECT_ATTACK_TYPE,
+			res.STAGE_DISPLAY_TARGETS,
+			res.STAGE_SELECT_ATTACK_TARGET,
+		],
+		res.curr_pawn
+	)
+	controls.set_attack_types_menu_visibility(res.stage == res.STAGE_SELECT_ATTACK_TYPE, res.curr_pawn)
+
 	match res.stage:
 		res.STAGE_SELECT_PAWN: controls.select_pawn(player)
 		res.STAGE_SHOW_ACTIONS: player.show_available_pawn_actions()
 		res.STAGE_SHOW_MOVEMENTS: player.show_available_movements()
 		res.STAGE_SELECT_LOCATION: controls.select_new_location()
 		res.STAGE_MOVE_PAWN: player.move_pawn()
+		res.STAGE_SELECT_ATTACK_TYPE: controls.select_attack_type()
 		res.STAGE_DISPLAY_TARGETS: player.display_attackable_targets()
 		res.STAGE_SELECT_ATTACK_TARGET: controls.select_pawn_to_attack()
 		res.STAGE_ATTACK: participant.serv.combat_service.attack_pawn(delta, true)
@@ -71,6 +85,7 @@ func handle_player_turn(delta: float, player: TacticsPlayer, participant: Tactic
 func handle_opponent_turn(delta: float, opponent: TacticsOpponent, participant: TacticsParticipant) -> void:
 	res.targets = participant.get_node("%TacticsPlayer")
 	controls.set_actions_menu_visibility(false, null)
+	controls.set_attack_types_menu_visibility(false, null)
 	if res.stage > 4:
 		res.stage = 0
 		DebugLog.debug_nospam("turn_stage", res.stage)

@@ -37,6 +37,9 @@ func _ready() -> void:
 	for action: String in controls.actions.keys():
 		var str_name: StringName = controls.actions[action]
 		get_act(action).connect("pressed", Callable(self, str_name))
+	get_node("HBox/AttackTypes/AttackType1").connect("pressed", Callable(self, "_player_selected_attack_1"))
+	get_node("HBox/AttackTypes/AttackType2").connect("pressed", Callable(self, "_player_selected_attack_2"))
+	get_node("HBox/AttackTypes/AttackType3").connect("pressed", Callable(self, "_player_selected_attack_3"))
 
 func _physics_process(delta: float) -> void:
 	# Handle physics-based processing
@@ -79,6 +82,10 @@ func is_mouse_hovering_ui_elem() -> bool:
 func set_actions_menu_visibility(v: bool, p: TacticsPawn) -> void:
 	serv.set_actions_menu_visibility(v, p, self)
 
+## Sets the visibility of the attack-types menu
+func set_attack_types_menu_visibility(v: bool, p: TacticsPawn) -> void:
+	serv.set_attack_types_menu_visibility(v, p, self)
+
 
 ## Gets the 3D position of the mouse in the game world
 func get_3d_canvas_mouse_position(collision_mask: int) -> Object:
@@ -99,6 +106,10 @@ func select_new_location() -> void:
 func select_pawn_to_attack() -> void:
 	serv.select_pawn_to_attack(self)
 
+## Initiates attack type selection.
+func select_attack_type() -> void:
+	serv.select_attack_type(self)
+
 
 ## Handles the player's intention to move
 func _player_wants_to_move() -> void:
@@ -110,9 +121,9 @@ func _player_wants_to_cancel() -> void:
 	serv.player_wants_to_cancel()
 
 
-## Handles the player's intention to wait
-func _player_wants_to_wait() -> void:
-	serv.player_wants_to_wait()
+## Handles the player's intention to guard
+func _player_wants_to_guard() -> void:
+	serv.player_wants_to_guard()
 
 
 ## Handles the player's intention to skip their turn
@@ -123,4 +134,16 @@ func _player_wants_to_skip_turn() -> void:
 ## Handles the player's intention to attack
 func _player_wants_to_attack() -> void:
 	serv.player_wants_to_attack()
+
+
+func _player_selected_attack_1() -> void:
+	serv.choose_attack_type(0)
+
+
+func _player_selected_attack_2() -> void:
+	serv.choose_attack_type(1)
+
+
+func _player_selected_attack_3() -> void:
+	serv.choose_attack_type(2)
 #endregion

@@ -77,7 +77,7 @@ func perform_movement(pawn: TacticsPawn, delta: float) -> void:
 func calculate_speed(pawn: TacticsPawn) -> float:
 	var _curr_speed: float = pawn.res.walk_speed
 	
-	if pawn.res.move_direction.y > TacticsPawnResource.MIN_HEIGHT_TO_JUMP:
+	if absf(pawn.res.move_direction.y) > float(TacticsPawnResource.MIN_HEIGHT_TO_JUMP):
 		_curr_speed = clamp(abs(pawn.res.move_direction.y) * 2.3, 3, INF)
 		pawn.res.is_jumping = true
 	

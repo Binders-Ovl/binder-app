@@ -75,6 +75,10 @@ func mark_reachable_tiles(root: TacticsTile, distance: float) -> void:
 func mark_attackable_tiles(root: TacticsTile, distance: float) -> void:
 	serv.mark_attackable_tiles(self, root, distance)
 
+## Marks preview attack area tiles for current hover datum and attack profile.
+func mark_attack_area_preview(attacker: TacticsPawn, datum_tile: TacticsTile, attack_profile: Resource) -> void:
+	serv.mark_attack_area_preview(self, attacker, datum_tile, attack_profile)
+
 
 ## Returns tile-based attack footprint for a pawn (tile instance id -> true).
 func get_attack_footprint(pawn: TacticsPawn) -> Dictionary:

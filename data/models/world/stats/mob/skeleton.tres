@@ -1,14 +1,10 @@
-[gd_resource type="Resource" script_class="StatsResource" format=3 uid="uid://c065vh6vqrtcc"]
+[gd_resource type="Resource" script_class="StatsResource" format=3 uid="uid://d037u116i7w1p"]
 
-[ext_resource type="Script" uid="uid://8da4t2q30l84" path="res://data/models/world/stats/stats_res.gd" id="1_nbj3d"]
+[ext_resource type="Script" uid="uid://8da4t2q30l84" path="res://data/models/world/stats/stats_res.gd" id="1_stats"]
 
 [resource]
-script = ExtResource("1_nbj3d")
+script = ExtResource("1_stats")
+expertise = "Skeleton"
 strategy = 1
-sprite = "uid://jpw6un0nwwer"
-movement = 5
-jump = 1.0
-max_health = 12
-max_mana = 8
+sprite = "res://assets/textures/actor/mob/chr_pawn_skeleton.png"
 sta = 9
-attack_power = 10

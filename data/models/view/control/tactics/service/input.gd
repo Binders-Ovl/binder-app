@@ -48,6 +48,10 @@ func is_mouse_hovering_ui_elem(
 					for action: Button in ctrl.get_node(e).get_children():
 						if action.get_global_rect().has_point(ctrl.get_viewport().get_mouse_position()): 
 							return true
+				"%AttackTypes":
+					for action: Button in ctrl.get_node(e).get_children():
+						if action.get_global_rect().has_point(ctrl.get_viewport().get_mouse_position()):
+							return true
 				"%Hints":
 					for hint: TextureRect in ctrl.get_node(e).get_children():
 						if hint.get_global_rect().has_point(ctrl.get_viewport().get_mouse_position()): 

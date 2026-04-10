@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="AttackProfileResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://data/models/world/combat/attack/attack_profile_res.gd" id="1_attack"]
+[ext_resource type="Resource" path="res://data/models/world/combat/area/examples/single_target.tres" id="2_area"]
+
+[resource]
+script = ExtResource("1_attack")
+display_name = "Slash"
+attack_type = 1
+base_attack = 18.0
+is_magic = false
+range = 1
+act_cost_mode = 0
+act_cost_absolute = 0.0
+act_cost_multiplier = 1.0
+can_target_flying = true
+elevation_modifier = 1.0
+damage_modifier = 1.0
+area = ExtResource("2_area")
+notes = ""

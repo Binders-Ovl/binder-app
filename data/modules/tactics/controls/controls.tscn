@@ -80,12 +80,12 @@ mouse_filter = 1
 mouse_default_cursor_shape = 2
 text = "Attack"
 
-[node name="Wait" type="Button" parent="HBox/Actions" unique_id=1966793391]
+[node name="Guard" type="Button" parent="HBox/Actions" unique_id=1966793391]
 custom_minimum_size = Vector2(196, 64)
 layout_mode = 2
 mouse_filter = 1
 mouse_default_cursor_shape = 2
-text = "Wait"
+text = "Guard"
 
 [node name="Debug_next_turn" type="Button" parent="HBox/Actions" unique_id=602514294]
 custom_minimum_size = Vector2(196, 64)
@@ -100,3 +100,31 @@ layout_mode = 2
 mouse_filter = 1
 mouse_default_cursor_shape = 2
 text = "Cancel"
+
+[node name="AttackTypes" type="VBoxContainer" parent="HBox" unique_id=1601132097]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+alignment = 2
+
+[node name="AttackType1" type="Button" parent="HBox/AttackTypes" unique_id=1103256354]
+custom_minimum_size = Vector2(196, 64)
+layout_mode = 2
+mouse_filter = 1
+mouse_default_cursor_shape = 2
+text = "Attack 1"
+
+[node name="AttackType2" type="Button" parent="HBox/AttackTypes" unique_id=1051036814]
+custom_minimum_size = Vector2(196, 64)
+layout_mode = 2
+mouse_filter = 1
+mouse_default_cursor_shape = 2
+text = "Attack 2"
+
+[node name="AttackType3" type="Button" parent="HBox/AttackTypes" unique_id=261109575]
+custom_minimum_size = Vector2(196, 64)
+layout_mode = 2
+mouse_filter = 1
+mouse_default_cursor_shape = 2
+text = "Attack 3"

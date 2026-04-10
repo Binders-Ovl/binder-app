@@ -2,6 +2,9 @@ class_name TacticsLevel
 extends Node3D
 ## Tactics system initialization and continuous active timeline management.
 
+const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
+const COMBAT_FORMULA = preload("res://data/models/world/combat/formula/combat_formula.gd")
+
 #region: --- Props ---
 @export var camera: TacticsCameraResource = load("res://data/models/view/camera/tactics/camera.tres")
 @export var camera_boundary_radius: float = 10.0
@@ -20,6 +23,7 @@ var result_replay_button: Button
 
 #region: --- Processing ---
 func _ready() -> void:
+	randomize()
 	if not ui_control:
 		push_error("TacticsControls needs a ControlResource from /data/models/view/control/tactics/")
 	if not camera:
@@ -87,12 +91,15 @@ func _process_enemy_timeline_actions() -> void:
 			continue
 
 		enemy_pawn.refresh_action_state()
+		var attack_profile = enemy_pawn.stats.get_primary_attack()
 		var attack_target: TacticsPawn = _nearest_attackable_target(enemy_pawn, player_pawns)
-		if attack_target and enemy_pawn.spend_act(float(TacticsConfig.action_cost.attack)):
-			attack_target.stats.apply_to_curr_health(-enemy_pawn.stats.attack_power)
-			enemy_pawn.refresh_action_state()
-			consumed_action = true
-			break
+		if attack_profile and attack_target:
+			var attack_cost: float = attack_profile.get_effective_act_cost(float(TacticsConfig.action_cost.attack))
+			if enemy_pawn.spend_act(attack_cost):
+				_apply_ai_attack(enemy_pawn, attack_target, attack_profile)
+				enemy_pawn.refresh_action_state()
+				consumed_action = true
+				break
 
 		if enemy_pawn.can_pawn_move():
 			var enemy_tile: TacticsTile = enemy_pawn.get_tile()
@@ -116,6 +123,58 @@ func _process_enemy_timeline_actions() -> void:
 	arena.restore_navigation_state(nav_state)
 	if consumed_action:
 		return
+
+func _apply_ai_attack(attacker: TacticsPawn, target: TacticsPawn, attack_profile) -> void:
+	var hit_roll: int = randi_range(1, 100)
+	if not COMBAT_FORMULA.roll_hit(attacker.stats.agi, target.stats.dex, hit_roll):
+		return
+
+	var damage: int = _resolve_attack_damage(attacker, target, attack_profile)
+	if damage <= 0:
+		return
+	target.stats.apply_to_curr_health(-damage)
+
+func _resolve_attack_damage(attacker: TacticsPawn, target: TacticsPawn, attack_profile) -> int:
+	var attacker_class = attacker.stats.class_combat
+	var target_class = target.stats.class_combat
+	var type_mod: float = COMBAT_FORMULA.get_type_mod(attack_profile.attack_type, target.stats.get_armor_type())
+	var damage: int
+	if attack_profile.is_magic:
+		damage = COMBAT_FORMULA.calc_magic_damage(
+			attack_profile.base_attack,
+			float(attacker.stats.intt),
+			float(attacker_class.get("int_scale")) if attacker_class else COMBAT_CONFIG.DEFAULT_INT_SCALE,
+			type_mod,
+			attack_profile.elevation_modifier,
+			attack_profile.damage_modifier,
+			float(target_class.get("base_mdef")) if target_class else 0.0,
+			float(target.stats.wis),
+			float(target_class.get("wis_scale")) if target_class else COMBAT_CONFIG.DEFAULT_WIS_SCALE,
+			float(target_class.get("mdef_mod")) if target_class else 1.0
+		)
+	else:
+		damage = COMBAT_FORMULA.calc_physical_damage(
+			attack_profile.base_attack,
+			float(attacker.stats.str),
+			float(attacker_class.get("str_scale")) if attacker_class else COMBAT_CONFIG.DEFAULT_STR_SCALE,
+			type_mod,
+			attack_profile.elevation_modifier,
+			attack_profile.damage_modifier,
+			float(target_class.get("base_pdef")) if target_class else 0.0,
+			float(target.stats.vit),
+			float(target_class.get("vit_scale")) if target_class else COMBAT_CONFIG.DEFAULT_VIT_SCALE,
+			float(target_class.get("pdef_mod")) if target_class else 1.0
+		)
+
+	var crit_chance: float = COMBAT_FORMULA.calc_crit_chance(
+		attacker.stats.agi,
+		float(attacker_class.get("crit_baseline")) if attacker_class else COMBAT_CONFIG.DEFAULT_CRIT_BASELINE,
+		float(attacker_class.get("crit_per_agi")) if attacker_class else COMBAT_CONFIG.DEFAULT_CRIT_PER_AGI
+	)
+	if randf_range(0.0, 100.0) <= crit_chance:
+		var crit_mult: float = float(attacker_class.get("crit_damage_mult")) if attacker_class else COMBAT_CONFIG.DEFAULT_CRIT_DAMAGE_MULT
+		damage = maxi(1, int(round(float(damage) * crit_mult)))
+	return damage
 
 func _nearest_attackable_target(attacker: TacticsPawn, targets: Array) -> TacticsPawn:
 	var attack_footprint: Dictionary = arena.get_attack_footprint(attacker)
@@ -169,10 +228,15 @@ func _cleanup_defeated_units() -> void:
 	_remove_dead_units_for(opponent)
 
 	if participant and participant.res:
+		var reset_to_select_pawn: bool = false
 		if participant.res.curr_pawn and (not is_instance_valid(participant.res.curr_pawn) or not participant.res.curr_pawn.is_alive()):
 			participant.res.curr_pawn = null
+			reset_to_select_pawn = true
 		if participant.res.attackable_pawn and (not is_instance_valid(participant.res.attackable_pawn) or not participant.res.attackable_pawn.is_alive()):
 			participant.res.attackable_pawn = null
+			participant.res.selected_attack_datum = null
+		if reset_to_select_pawn:
+			_reset_player_selection_state()
 
 func _remove_dead_units_for(team: Node3D) -> void:
 	for child: Node in team.get_children():
@@ -181,12 +245,56 @@ func _remove_dead_units_for(team: Node3D) -> void:
 		var pawn: TacticsPawn = child as TacticsPawn
 		if pawn.is_alive():
 			continue
+		_prepare_dead_pawn_for_removal(pawn)
 		if camera.target == pawn:
 			camera.target = null
 		pawn.visible = false
 		pawn.set_physics_process(false)
 		pawn.set_process(false)
 		pawn.call_deferred("queue_free")
+
+
+func _reset_player_selection_state() -> void:
+	if not participant or not participant.res:
+		return
+	participant.res.clear_attack_selection()
+	participant.res.attackable_pawn = null
+	participant.res.selected_attack_datum = null
+	participant.res.stage = participant.res.STAGE_SELECT_PAWN
+	if ui_control:
+		ui_control.set_actions_menu_visibility(false, null)
+		ui_control.set_attack_types_menu_visibility(false, null)
+	if arena:
+		arena.reset_all_tile_markers()
+
+
+func _prepare_dead_pawn_for_removal(pawn: TacticsPawn) -> void:
+	if not pawn:
+		return
+	if arena and arena.res:
+		arena.res.release_all_move_tiles_for_pawn(pawn)
+		arena.res.release_all_bump_tiles_for_pawn(pawn)
+	if pawn.res:
+		pawn.res.pathfinding_tilestack.clear()
+		pawn.res.clear_move_transaction()
+		pawn.res.set_moving(false)
+		pawn.res.set_attacking(false)
+		pawn.res.move_direction = Vector3.ZERO
+	if pawn is CollisionObject3D:
+		var pawn_collision: CollisionObject3D = pawn as CollisionObject3D
+		pawn_collision.collision_layer = 0
+		pawn_collision.collision_mask = 0
+	for node: Node in pawn.find_children("*", "CollisionObject3D", true, false):
+		var body: CollisionObject3D = node as CollisionObject3D
+		if not body:
+			continue
+		body.collision_layer = 0
+		body.collision_mask = 0
+	for node: Node in pawn.find_children("*", "CollisionShape3D", true, false):
+		var shape: CollisionShape3D = node as CollisionShape3D
+		if not shape:
+			continue
+		shape.disabled = true
 
 func _try_resolve_battle() -> bool:
 	var alive_player_units: int = _count_alive_units(player)

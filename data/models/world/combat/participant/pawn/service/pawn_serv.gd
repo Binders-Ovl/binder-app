@@ -46,6 +46,7 @@ func process(pawn: TacticsPawn, delta: float) -> void:
 ## @param pawn: The attacking TacticsPawn
 ## @param target_pawn: The TacticsPawn being attacked
 ## @param delta: Time elapsed since the last frame
+## @param target_position: Optional explicit aim point when no pawn is targeted
 ## @return: Whether the attack was successful
-func attack_target_pawn(pawn: TacticsPawn, target_pawn: TacticsPawn, delta: float) -> bool:
-	return combat.attack_target_pawn(pawn, target_pawn, delta)
+func attack_target_pawn(pawn: TacticsPawn, target_pawn: TacticsPawn, delta: float, target_position: Vector3 = Vector3.INF) -> bool:
+	return combat.attack_target_pawn(pawn, target_pawn, delta, target_position)

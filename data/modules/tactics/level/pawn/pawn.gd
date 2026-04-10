@@ -98,9 +98,10 @@ func end_pawn_turn() -> void:
 ##
 ## @param target_pawn: The TacticsPawn to attack
 ## @param delta: Time elapsed since the last frame
+## @param target_position: Optional explicit aim point when no pawn is targeted
 ## @return: Whether the attack was successful
-func attack_target_pawn(target_pawn: TacticsPawn, delta: float) -> bool:
-	return serv.attack_target_pawn(self, target_pawn, delta)
+func attack_target_pawn(target_pawn: TacticsPawn, delta: float, target_position: Vector3 = Vector3.INF) -> bool:
+	return serv.attack_target_pawn(self, target_pawn, delta, target_position)
 
 
 ## Moves the pawn along its designated path
@@ -114,15 +115,16 @@ func move_along_path(delta: float) -> void:
 func tick_act(delta: float) -> void:
 	if not is_alive() or res.is_attacking:
 		return
-	var gain_per_sec: float = float(TacticsConfig.active_timeline.base_recovery) + (float(stats.sta) * float(TacticsConfig.active_timeline.sta_multiplier))
+	var gain_per_sec: float = stats.get_act_recovery_per_sec()
 	stats.curr_act = clampf(stats.curr_act + (gain_per_sec * delta), 0.0, stats.max_act)
 
 
 ## Recomputes move/attack availability based on current ACT and pawn state.
 func refresh_action_state() -> void:
 	var alive: bool = is_alive()
+	var min_attack_cost: float = _get_min_attack_cost()
 	res.can_move = alive and not res.is_moving and stats.curr_act >= float(TacticsConfig.action_cost.move)
-	res.can_attack = alive and not res.is_moving and not res.is_attacking and stats.curr_act >= float(TacticsConfig.action_cost.attack)
+	res.can_attack = alive and not res.is_moving and not res.is_attacking and stats.curr_act >= min_attack_cost
 
 
 ## Attempts to spend ACT from the pawn gauge.
@@ -132,3 +134,16 @@ func spend_act(cost: float) -> bool:
 	stats.curr_act = maxf(0.0, stats.curr_act - cost)
 	refresh_action_state()
 	return true
+
+
+func _get_min_attack_cost() -> float:
+	var default_cost: float = float(TacticsConfig.action_cost.attack)
+	var costs: Array[float] = []
+	for idx: int in [0, 1, 2]:
+		var attack = stats.get_attack(idx)
+		if attack and attack.has_method("get_effective_act_cost"):
+			costs.append(float(attack.call("get_effective_act_cost", default_cost)))
+	if costs.is_empty():
+		return default_cost
+	costs.sort()
+	return maxf(0.0, costs[0])

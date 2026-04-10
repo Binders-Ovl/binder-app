@@ -1,20 +1,14 @@
 class_name TacticsControlsSelectionService
 extends RefCounted
-## Service class for managing pawn and tile selection in the Tactics game.
 
-## Reference to the TacticsParticipantResource.
+const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
+
 var participant: TacticsParticipantResource
-## Reference to the TacticsArenaResource.
 var arena: TacticsArenaResource
-## Reference to the TacticsControlsResource.
 var controls: TacticsControlsResource
-## Reference to the TacticsCameraResource.
 var t_cam: TacticsCameraResource
-## Reference to the TacticsControlsInputService.
 var input_service: TacticsControlsInputService
 
-
-## Initializes the TacticsControlsSelectionService with necessary resources and services.
 func _init(_participant: TacticsParticipantResource, _arena: TacticsArenaResource, _controls: TacticsControlsResource, _t_cam: TacticsCameraResource, _input_service: TacticsControlsInputService) -> void:
 	participant = _participant
 	arena = _arena
@@ -22,45 +16,148 @@ func _init(_participant: TacticsParticipantResource, _arena: TacticsArenaResourc
 	t_cam = _t_cam
 	input_service = _input_service
 
-
-## Handles the selection of a pawn.
 func select_pawn(player: TacticsPlayer, ctrl: TacticsControls) -> void:
 	arena.reset_all_tile_markers()
 	if ctrl.curr_pawn:
 		controls.set_actions_menu_visibility(false, participant.curr_pawn)
+		controls.set_attack_types_menu_visibility(false, participant.curr_pawn)
 		ctrl.curr_pawn.show_pawn_stats(false)
-	
+
 	ctrl.curr_pawn = _select_hovered_pawn(ctrl)
 	if not ctrl.curr_pawn:
 		return
-	else:
-		ctrl.curr_pawn.show_pawn_stats(true)
-	
+	ctrl.curr_pawn.show_pawn_stats(true)
+
 	if Input.is_action_just_pressed("ui_accept") and ctrl.curr_pawn.can_act():
 		if ctrl.curr_pawn in player.get_children():
 			t_cam.target = ctrl.curr_pawn
 			participant.curr_pawn = ctrl.curr_pawn
+			participant.clear_attack_selection()
 			controls.set_actions_menu_visibility(true, participant.curr_pawn)
-			participant.stage = 1
+			participant.stage = participant.STAGE_SHOW_ACTIONS
+
+func select_attack_type(ctrl: TacticsControls) -> void:
+	if not participant.curr_pawn or not is_instance_valid(participant.curr_pawn):
+		participant.clear_attack_selection()
+		participant.stage = participant.STAGE_SELECT_PAWN
+		return
+	# Keep actions visible so Cancel can back out to the action menu.
+	controls.set_actions_menu_visibility(true, participant.curr_pawn)
+	controls.set_attack_types_menu_visibility(true, participant.curr_pawn)
+	ctrl.get_node("HBox/Actions/Move").disabled = true
+	ctrl.get_node("HBox/Actions/Attack").disabled = true
+	ctrl.get_node("HBox/Actions/Guard").disabled = true
+	ctrl.get_node("HBox/Actions/Debug_next_turn").disabled = true
+	ctrl.get_node("HBox/Actions/Cancel").disabled = false
+
+func choose_attack_type(slot_index: int) -> void:
+	if not participant.curr_pawn or not is_instance_valid(participant.curr_pawn):
+		participant.clear_attack_selection()
+		participant.stage = participant.STAGE_SELECT_PAWN
+		return
+	var attack = participant.curr_pawn.stats.get_attack(slot_index)
+	if attack == null:
+		return
+	participant.selected_attack_slot = slot_index
+	participant.selected_attack = attack
+	participant.selected_attack_datum = null
+	participant.attackable_pawn = null
+	participant.stage = participant.STAGE_DISPLAY_TARGETS
+
+func select_pawn_to_attack(ctrl: TacticsControls) -> void:
+	if not participant.curr_pawn or not is_instance_valid(participant.curr_pawn):
+		participant.attackable_pawn = null
+		participant.clear_attack_selection()
+		participant.stage = participant.STAGE_SELECT_PAWN
+		return
+	if participant.selected_attack == null:
+		participant.stage = participant.STAGE_SELECT_ATTACK_TYPE
+		return
+
+	_refresh_live_attack_context(participant.selected_attack)
+	controls.set_actions_menu_visibility(true, participant.curr_pawn)
+	controls.set_attack_types_menu_visibility(false, participant.curr_pawn)
+	if participant.attackable_pawn:
+		controls.set_actions_menu_visibility(false, participant.attackable_pawn)
+		participant.attackable_pawn.show_pawn_stats(false)
+
+	var tile: TacticsTile = _select_hovered_tile(ctrl)
+	var arena_node: TacticsArena = participant.curr_pawn.get_node_or_null("%TacticsArena")
+	if arena_node:
+		arena_node.mark_attack_area_preview(participant.curr_pawn, tile, participant.selected_attack)
+	var occupier: Object = tile.get_tile_occupier() if tile else null
+	var hovered_target: TacticsPawn = occupier as TacticsPawn
+	participant.attackable_pawn = hovered_target if tile and tile.attackable and _is_valid_attack_target(participant.curr_pawn, hovered_target) else null
+	if participant.attackable_pawn:
+		controls.set_actions_menu_visibility(true, participant.attackable_pawn)
+		participant.attackable_pawn.show_pawn_stats(true)
+	if Input.is_action_just_pressed("ui_accept") and tile and tile.attackable:
+		participant.selected_attack_datum = tile
+		t_cam.target = participant.attackable_pawn if participant.attackable_pawn else tile
+		participant.stage = participant.STAGE_ATTACK
 
 
-## Selects the pawn currently hovered by the mouse.
-func _select_hovered_pawn(ctrl: TacticsControls) -> PhysicsBody3D:
-	var pawn: TacticsPawn = input_service.get_3d_canvas_mouse_position(2, ctrl)
-	var tile: TacticsTile = input_service.get_3d_canvas_mouse_position(1, ctrl) if not pawn else pawn.get_tile()
-	arena.mark_hover_tile(tile)
-	return pawn if pawn else tile.get_tile_occupier() if tile else null
+func _is_valid_attack_target(attacker: TacticsPawn, target: TacticsPawn) -> bool:
+	if not attacker or not is_instance_valid(attacker):
+		return false
+	if not target or not is_instance_valid(target) or not target.is_alive():
+		return false
+	return true
 
+func player_wants_to_move() -> void:
+	if participant.display_opponent_stats:
+		participant.display_opponent_stats = false
+	_clear_attack_preview()
+	participant.clear_attack_selection()
+	if not participant.curr_pawn or not participant.curr_pawn.can_pawn_move():
+		return
+	participant.stage = participant.STAGE_SHOW_MOVEMENTS
 
-## Selects the tile currently hovered by the mouse.
-func _select_hovered_tile(ctrl: TacticsControls) -> TacticsTile:
-	var pawn: TacticsPawn = input_service.get_3d_canvas_mouse_position(2, ctrl)
-	var tile: TacticsTile = input_service.get_3d_canvas_mouse_position(1, ctrl) if not pawn else pawn.get_tile()
-	arena.mark_hover_tile(tile)
-	return tile
+func player_wants_to_cancel() -> void:
+	if participant.display_opponent_stats:
+		participant.display_opponent_stats = false
 
+	if participant.stage == participant.STAGE_SELECT_ATTACK_TARGET or participant.stage == participant.STAGE_DISPLAY_TARGETS:
+		_clear_attack_preview()
+		participant.attackable_pawn = null
+		participant.selected_attack_datum = null
+		participant.stage = participant.STAGE_SELECT_ATTACK_TYPE
+		return
+	if participant.stage == participant.STAGE_SELECT_ATTACK_TYPE:
+		_clear_attack_preview()
+		participant.clear_attack_selection()
+		participant.stage = participant.STAGE_SHOW_ACTIONS
+		return
+	if participant.stage == participant.STAGE_SHOW_ACTIONS:
+		_clear_attack_preview()
+		participant.clear_attack_selection()
+		participant.stage = participant.STAGE_SELECT_PAWN
+		return
+	participant.stage = participant.STAGE_SHOW_ACTIONS if participant.stage > participant.STAGE_SHOW_ACTIONS else participant.STAGE_SELECT_PAWN
 
-## Handles the selection of a new location for the current pawn.
+func player_wants_to_guard() -> void:
+	if participant.display_opponent_stats:
+		participant.display_opponent_stats = false
+	_clear_attack_preview()
+	participant.clear_attack_selection()
+	participant.curr_pawn.end_pawn_turn()
+	participant.stage = participant.STAGE_SELECT_PAWN
+
+func player_wants_to_skip_turn() -> void:
+	if participant.display_opponent_stats:
+		participant.display_opponent_stats = false
+	_clear_attack_preview()
+	participant.clear_attack_selection()
+	participant.skip_turn()
+
+func player_wants_to_attack() -> void:
+	if not participant.curr_pawn or not participant.curr_pawn.can_pawn_attack():
+		return
+	_clear_attack_preview()
+	participant.attackable_pawn = null
+	participant.clear_attack_selection()
+	participant.stage = participant.STAGE_SELECT_ATTACK_TYPE
+
 func select_new_location(ctrl: TacticsControls) -> void:
 	_refresh_live_move_context(ctrl)
 	var acting_pawn: TacticsPawn = participant.curr_pawn if participant.curr_pawn and is_instance_valid(participant.curr_pawn) else ctrl.curr_pawn
@@ -70,7 +167,6 @@ func select_new_location(ctrl: TacticsControls) -> void:
 	var tile: TacticsTile = input_service.get_3d_canvas_mouse_position(1, ctrl)
 	arena.mark_hover_tile(tile)
 	if Input.is_action_just_pressed("ui_accept") and tile and tile.reachable:
-		# Recompute once more at confirmation time so queued enemy movement can't leave stale legality.
 		_refresh_live_move_context(ctrl)
 		var path: Array = arena.get_pathfinding_tilestack(tile)
 		if path.is_empty():
@@ -83,78 +179,21 @@ func select_new_location(ctrl: TacticsControls) -> void:
 		acting_pawn.res.pathfinding_tilestack = path
 		ctrl.curr_pawn = acting_pawn
 		t_cam.target = tile
-		participant.stage = 4
+		participant.stage = participant.STAGE_MOVE_PAWN
 
 
-## Handles the selection of a pawn to attack.
-func select_pawn_to_attack(ctrl: TacticsControls) -> void:
-	if not participant.curr_pawn or not is_instance_valid(participant.curr_pawn):
-		participant.attackable_pawn = null
-		participant.stage = participant.STAGE_SELECT_PAWN
-		return
-
-	_refresh_live_attack_context()
-	controls.set_actions_menu_visibility(true, participant.curr_pawn)
-	if participant.attackable_pawn:
-		controls.set_actions_menu_visibility(false, participant.attackable_pawn)
-		participant.attackable_pawn.show_pawn_stats(false)
-	var tile: TacticsTile = _select_hovered_tile(ctrl)
-	var occupier: Object = tile.get_tile_occupier() if tile else null
-	var hovered_target: TacticsPawn = occupier as TacticsPawn
-	participant.attackable_pawn = hovered_target if tile and tile.attackable and _is_valid_attack_target(participant.curr_pawn, hovered_target) else null
-	if participant.attackable_pawn:
-		controls.set_actions_menu_visibility(true, participant.attackable_pawn)
-		participant.attackable_pawn.show_pawn_stats(true)
-	if Input.is_action_just_pressed("ui_accept") and tile and tile.attackable and participant.attackable_pawn:
-		t_cam.target = participant.attackable_pawn
-		participant.stage = participant.STAGE_ATTACK
+func _select_hovered_pawn(ctrl: TacticsControls) -> PhysicsBody3D:
+	var pawn: TacticsPawn = input_service.get_3d_canvas_mouse_position(2, ctrl)
+	var tile: TacticsTile = input_service.get_3d_canvas_mouse_position(1, ctrl) if not pawn else pawn.get_tile()
+	arena.mark_hover_tile(tile)
+	return pawn if pawn else tile.get_tile_occupier() if tile else null
 
 
-func _is_valid_attack_target(attacker: TacticsPawn, target: TacticsPawn) -> bool:
-	if not attacker or not is_instance_valid(attacker):
-		return false
-	if not target or not is_instance_valid(target) or not target.is_alive():
-		return false
-	return true
-
-
-## Handles the player's intention to move.
-func player_wants_to_move() -> void:
-	if participant.display_opponent_stats:
-		participant.display_opponent_stats = false
-	if not participant.curr_pawn or not participant.curr_pawn.can_pawn_move():
-		return
-	participant.stage = 2
-
-
-## Handles the player's intention to cancel.
-func player_wants_to_cancel() -> void:
-	if participant.display_opponent_stats:
-		participant.display_opponent_stats = false
-	participant.stage = 1 if participant.stage > 1 else 0
-
-
-## Handles the player's intention to wait.
-func player_wants_to_wait() -> void:
-	if participant.display_opponent_stats:
-		participant.display_opponent_stats = false
-	participant.curr_pawn.end_pawn_turn()
-	participant.stage = 0
-
-
-## Handles the player's intention to skip turn.
-func player_wants_to_skip_turn() -> void:
-	if participant.display_opponent_stats:
-		participant.display_opponent_stats = false
-	participant.skip_turn()
-
-
-## Handles the player's intention to attack.
-func player_wants_to_attack() -> void:
-	if not participant.curr_pawn or not participant.curr_pawn.can_pawn_attack():
-		return
-	participant.stage = 5
-
+func _select_hovered_tile(ctrl: TacticsControls) -> TacticsTile:
+	var pawn: TacticsPawn = input_service.get_3d_canvas_mouse_position(2, ctrl)
+	var tile: TacticsTile = input_service.get_3d_canvas_mouse_position(1, ctrl) if not pawn else pawn.get_tile()
+	arena.mark_hover_tile(tile)
+	return tile
 
 func _refresh_live_move_context(ctrl: TacticsControls) -> void:
 	var pawn: TacticsPawn = participant.curr_pawn if participant.curr_pawn and is_instance_valid(participant.curr_pawn) else ctrl.curr_pawn
@@ -172,7 +211,7 @@ func _refresh_live_move_context(ctrl: TacticsControls) -> void:
 	arena_node.mark_reachable_tiles(curr_tile, pawn.stats.movement)
 
 
-func _refresh_live_attack_context() -> void:
+func _refresh_live_attack_context(attack) -> void:
 	var pawn: TacticsPawn = participant.curr_pawn
 	if not pawn or not is_instance_valid(pawn) or not pawn.is_alive():
 		return
@@ -183,9 +222,13 @@ func _refresh_live_attack_context() -> void:
 	if not arena_node:
 		return
 
+	var attack_range: float = float(attack.range)
+	if attack.area and int(attack.area.get("targeting_mode")) == COMBAT_CONFIG.AreaTargetingMode.SELF_CENTERED:
+		attack_range = 0.0
+
 	arena_node.reset_all_tile_markers()
-	arena_node.process_surrounding_tiles(curr_tile, float(pawn.stats.attack_range), 9999.0, [], false, true)
-	arena_node.mark_attackable_tiles(curr_tile, float(pawn.stats.attack_range))
+	arena_node.process_surrounding_tiles(curr_tile, attack_range, 9999.0, [], false, true)
+	arena_node.mark_attackable_tiles(curr_tile, attack_range)
 
 
 func _path_has_movement(path: Array, from_position: Vector3) -> bool:
@@ -193,3 +236,11 @@ func _path_has_movement(path: Array, from_position: Vector3) -> bool:
 		if step is Vector3 and from_position.distance_to(step) > 0.02:
 			return true
 	return false
+
+
+func _clear_attack_preview() -> void:
+	if not participant.curr_pawn or not is_instance_valid(participant.curr_pawn):
+		return
+	var arena_node: TacticsArena = participant.curr_pawn.get_node_or_null("%TacticsArena")
+	if arena_node:
+		arena_node.mark_attack_area_preview(participant.curr_pawn, null, null)

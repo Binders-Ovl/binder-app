@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AttackAreaResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/models/world/combat/area/attack_area_res.gd" id="1_area"]
+
+[resource]
+script = ExtResource("1_area")
+area_name = "Single Target"
+targeting_mode = 0
+pattern_size = 3
+datum_row = 2
+datum_col = 1
+affected_offsets = [Vector2i(0, 0)]
+notes = ""

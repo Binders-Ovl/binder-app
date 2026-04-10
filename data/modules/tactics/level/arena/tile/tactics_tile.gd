@@ -14,6 +14,8 @@ var tile_raycast: Resource = load("res://data/modules/tactics/level/arena/tile/r
 var reachable: bool = false
 ## Whether the tile is attackable
 var attackable: bool = false
+## Whether the tile is inside currently previewed attack area footprint.
+var attack_area_preview: bool = false
 ## Whether the tile is being hovered over
 var hover: bool = false
 ## Whether moving here would place the active unit in opponent attack range
@@ -38,6 +40,10 @@ var hover_reachable_threatened_mat: StandardMaterial3D = TacticsConfig.mat_color
 var attackable_mat: StandardMaterial3D = TacticsConfig.mat_color.attackable
 ## Material for hover and attackable state
 var hover_attackable_mat: StandardMaterial3D = TacticsConfig.mat_color.hover_attackable
+## Material for attack-area preview state
+var attack_area_preview_mat: StandardMaterial3D = TacticsConfig.mat_color.attack_area_preview
+## Material for hover + attack-area preview state
+var hover_attack_area_preview_mat: StandardMaterial3D = TacticsConfig.mat_color.hover_attack_area_preview
 #endregion
 
 #region: --- Processing ---
@@ -49,12 +55,14 @@ func _process(_delta: float) -> void:
 		return # If the "Tile" node wasn't found, the function exits early to avoid errors.
 	
 	# Set visibility based on current tactical states.
-	tile.visible = attackable or reachable or hover or threatened_move
+	tile.visible = attackable or attack_area_preview or reachable or hover or threatened_move
 	
 	match hover:
 		true: # If hover is true, decide which material to use based on the tile's state
 			if reachable and threatened_move:
 				tile.material_override = hover_reachable_threatened_mat
+			elif attack_area_preview:
+				tile.material_override = hover_attack_area_preview_mat
 			elif reachable:
 				tile.material_override = hover_reachable_mat
 			elif attackable:
@@ -64,6 +72,8 @@ func _process(_delta: float) -> void:
 		false: # If hover is false, this block decides between two materials
 			if reachable and threatened_move:
 				tile.material_override = reachable_threatened_mat
+			elif attack_area_preview:
+				tile.material_override = attack_area_preview_mat
 			elif reachable:
 				tile.material_override = reachable_mat
 			elif attackable:
@@ -107,6 +117,7 @@ func reset_markers() -> void:
 	pf_distance = 0
 	reachable = false
 	attackable = false
+	attack_area_preview = false
 	threatened_move = false
 
 

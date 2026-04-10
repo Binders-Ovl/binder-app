@@ -1,18 +1,9 @@
-[gd_resource type="Resource" script_class="StatsResource" load_steps=2 format=3 uid="uid://exlkcu7d77lb"]
+[gd_resource type="Resource" script_class="StatsResource" format=3 uid="uid://1yyouq180po2"]
 
-[ext_resource type="Script" path="res://data/models/world/stats/stats_res.gd" id="1_lwyqq"]
+[ext_resource type="Script" uid="uid://8da4t2q30l84" path="res://data/models/world/stats/stats_res.gd" id="1_stats"]
 
 [resource]
-script = ExtResource("1_lwyqq")
-override_name = ""
-expertise = ""
-strategy = 0
-level = 1
+script = ExtResource("1_stats")
+expertise = "Skeleton Captain"
 sprite = "res://assets/textures/actor/mob/chr_pawn_skeleton_cpt.png"
-movement = 3
-jump = 1.0
-max_health = 20
-max_mana = 5
 sta = 7
-attack_range = 6
-attack_power = 20

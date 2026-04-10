@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://data/models/world/skill/skill_res.gd" id="1_skill"]
+[ext_resource type="Resource" path="res://data/models/world/combat/area/examples/single_target.tres" id="2_area"]
+
+[resource]
+script = ExtResource("1_skill")
+skill_id = "heal_minor"
+display_name = "Minor Heal"
+mp_cost = 8
+cooldown_sec = 4.0
+targeting_area = ExtResource("2_area")
+notes = "Library placeholder only"

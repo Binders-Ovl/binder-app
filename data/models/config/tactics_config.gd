@@ -13,6 +13,7 @@ static var color: Dictionary = {
 	"blue_bolt": "0aa9ffBF", # Semi-transparent blue bolt color
 	"rosso_corsa": "d10000BF", # Semi-transparent rosso corsa (racing red) color
 	"coral_red": "ff4242BF", # Semi-transparent coral red color
+	"soft_yellow": "F6E27ABF", # Soft yellow for attack-area preview
 }
 
 ## Shared selector overlay tuning
@@ -42,6 +43,8 @@ static var mat_color: Dictionary = {
 	"hover_reachable_threatened": create_material(move_risk_purple_color.lightened(0.18)),
 	"attackable": create_material(str(color.rosso_corsa)),
 	"hover_attackable": create_material(str(color.coral_red)),
+	"attack_area_preview": create_material(str(color.soft_yellow)),
+	"hover_attack_area_preview": create_material(Color(str(color.soft_yellow)).lightened(0.18)),
 }
 
 ## Dictionary of pawn-related configuration values.
@@ -75,7 +78,7 @@ static var view: Dictionary = {
 
 ## Array of UI element names used to filter out UI elements when parsing the mouse cursor position.
 static var ui_elem: Array[String] = [
-	"%Actions", "%Hints",
+	"%Actions", "%AttackTypes", "%Hints",
 ]
 #endregion
 

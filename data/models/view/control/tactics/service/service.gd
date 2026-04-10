@@ -41,10 +41,12 @@ func setup(ctrl: TacticsControls) -> void:
 		push_error("TacticsControls needs a ControlResource from /data/models/view/controls/tactics/")
 	else:
 		controls.connect("called_set_actions_menu_visibility", ctrl.set_actions_menu_visibility)
+		controls.connect("called_set_attack_types_menu_visibility", ctrl.set_attack_types_menu_visibility)
 		controls.connect("called_set_cursor_shape_to_move", ctrl.set_cursor_shape_to_move)
 		controls.connect("called_set_cursor_shape_to_arrow", ctrl.set_cursor_shape_to_arrow)
 		controls.connect("called_select_pawn", ctrl.select_pawn)
 		controls.connect("called_select_pawn_to_attack", ctrl.select_pawn_to_attack)
+		controls.connect("called_select_attack_type", ctrl.select_attack_type)
 		controls.connect("called_select_new_location", ctrl.select_new_location)
 	if not t_cam:
 		push_error("TacticsCamera needs a CameraResource (T Cam) from /data/models/view/camera/tactics/")
@@ -67,6 +69,10 @@ func handle_input(event: InputEvent) -> void:
 func set_actions_menu_visibility(v: bool, p: TacticsPawn, ctrl: TacticsControls) -> void:
 	ui_service.set_actions_menu_visibility(v, p, ctrl)
 
+## Delegates setting attack-types menu visibility to the UI service.
+func set_attack_types_menu_visibility(v: bool, p: TacticsPawn, ctrl: TacticsControls) -> void:
+	ui_service.set_attack_types_menu_visibility(v, p, ctrl)
+
 
 ## Delegates pawn selection to the pawn selection service.
 func select_pawn(player: TacticsPlayer, ctrl: TacticsControls) -> void:
@@ -82,6 +88,14 @@ func select_new_location(ctrl: TacticsControls) -> void:
 func select_pawn_to_attack(ctrl: TacticsControls) -> void:
 	pawn_selection_service.select_pawn_to_attack(ctrl)
 
+## Delegates attack type selection stage to the pawn selection service.
+func select_attack_type(ctrl: TacticsControls) -> void:
+	pawn_selection_service.select_attack_type(ctrl)
+
+## Delegates concrete attack type pick.
+func choose_attack_type(slot_index: int) -> void:
+	pawn_selection_service.choose_attack_type(slot_index)
+
 
 ## Handles player's move action.
 func player_wants_to_move() -> void:
@@ -93,9 +107,9 @@ func player_wants_to_cancel() -> void:
 	pawn_selection_service.player_wants_to_cancel()
 
 
-## Handles player's wait action.
-func player_wants_to_wait() -> void:
-	pawn_selection_service.player_wants_to_wait()
+## Handles player's guard action.
+func player_wants_to_guard() -> void:
+	pawn_selection_service.player_wants_to_guard()
 
 
 ## Handles player's skip turn action.
@@ -106,3 +120,18 @@ func player_wants_to_skip_turn() -> void:
 ## Handles player's attack action.
 func player_wants_to_attack() -> void:
 	pawn_selection_service.player_wants_to_attack()
+
+
+## Delegates camera movement to camera service.
+func move_camera(delta: float) -> void:
+	camera_service.move_camera(delta, controls.is_joystick)
+
+
+## Delegates 3D mouse projection to input service.
+func get_3d_canvas_mouse_position(collision_mask: int, ctrl: TacticsControls) -> Object:
+	return input_service.get_3d_canvas_mouse_position(collision_mask, ctrl)
+
+
+## Delegates UI hover check to input service.
+func is_mouse_hovering_ui_elem(ctrl: TacticsControls) -> bool:
+	return input_service.is_mouse_hovering_ui_elem(ctrl)

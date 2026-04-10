@@ -1,16 +1,20 @@
-[gd_resource type="Resource" script_class="StatsResource" format=3 uid="uid://1fetqfwxu88y"]
+[gd_resource type="Resource" script_class="StatsResource" format=3 uid="uid://bk880s63nhe11"]
 
-[ext_resource type="Script" uid="uid://8da4t2q30l84" path="res://data/models/world/stats/stats_res.gd" id="1_ednwr"]
+[ext_resource type="Script" uid="uid://8da4t2q30l84" path="res://data/models/world/stats/stats_res.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://data/models/world/combat/class/examples/archer_class.tres" id="2_class"]
+[ext_resource type="Resource" path="res://data/models/world/combat/attack/examples/archer_pierce.tres" id="3_attack_1"]
+[ext_resource type="Resource" path="res://data/models/world/combat/attack/examples/captain_thrust.tres" id="3_sftkh"]
+[ext_resource type="Resource" path="res://data/models/world/combat/attack/examples/knight_slash.tres" id="4_attack_2"]
 
 [resource]
-script = ExtResource("1_ednwr")
+script = ExtResource("1_stats")
+override_name = "Lysa"
 expertise = "Archer"
 strategy = 3
 sprite = "res://assets/textures/actor/character/chr_pawn_archer.png"
-movement = 5
-jump = 3.0
-max_health = 3500
-max_mana = 20
-sta = 15
-attack_range = 4
-attack_power = 10
+str = 400
+sta = 60
+class_combat = ExtResource("2_class")
+attack_1 = ExtResource("4_attack_2")
+attack_2 = ExtResource("3_attack_1")
+attack_3 = ExtResource("3_sftkh")

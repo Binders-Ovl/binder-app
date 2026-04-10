@@ -2,6 +2,8 @@ class_name TacticsOpponentService
 extends RefCounted
 ## Service class for TacticsOpponent
 
+const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
+
 ## Resource containing participant data and configurations
 var res: TacticsParticipantResource
 ## Resource for camera-related data and configurations
@@ -97,16 +99,26 @@ func choose_pawn_to_attack() -> void:
 	if not res.curr_pawn or not is_instance_valid(res.curr_pawn):
 		res.stage = res.STAGE_SELECT_PAWN
 		return
+	var attack_profile = res.curr_pawn.stats.get_primary_attack()
+	if attack_profile == null:
+		res.stage = res.STAGE_SELECT_PAWN
+		return
+	res.selected_attack_slot = 0
+	res.selected_attack = attack_profile
 	var curr_tile: TacticsTile = res.curr_pawn.get_tile()
 	if not curr_tile:
 		res.stage = res.STAGE_SELECT_PAWN
 		return
+	var attack_range: float = float(attack_profile.range)
+	if attack_profile.area and int(attack_profile.area.get("targeting_mode")) == COMBAT_CONFIG.AreaTargetingMode.SELF_CENTERED:
+		attack_range = 0.0
 	arena.reset_all_tile_markers()
-	arena.process_surrounding_tiles(curr_tile, float(res.curr_pawn.stats.attack_range), 9999.0, [], false, true)
-	arena.mark_attackable_tiles(curr_tile, res.curr_pawn.stats.attack_range)
+	arena.process_surrounding_tiles(curr_tile, attack_range, 9999.0, [], false, true)
+	arena.mark_attackable_tiles(curr_tile, attack_range)
 	
 	res.attackable_pawn = arena.get_weakest_attackable_pawn(res.targets.get_children())
 	if res.attackable_pawn:
+		res.selected_attack_datum = res.attackable_pawn.get_tile()
 		if DebugLog.debug_enabled:
 			print_rich("[color=orange]Weakest target detected:", res.attackable_pawn, "[/color]")
 		controls.set_actions_menu_visibility(true, res.attackable_pawn)

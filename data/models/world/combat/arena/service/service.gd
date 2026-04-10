@@ -2,8 +2,11 @@ class_name TacticsArenaService
 extends RefCounted
 ## Service class for TacticsArena
 
+const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
+
 ## The service we inject into every tile
 const TILE_SERVICE = preload("res://data/models/world/combat/arena/tile_service/service.gd")
+const ATTACK_AREA_SERVICE = preload("res://data/models/world/combat/area/service.gd")
 const SELECTOR_OVERLAY_ROOT_NAME: StringName = &"SelectorOverlay"
 const SELECTOR_OVERLAY_MESH_NAME: StringName = &"SelectorOverlayMesh"
 const SELECTOR_OVERLAY_ROOT_PATH: NodePath = ^"SelectorOverlay"
@@ -15,12 +18,14 @@ const TILE_NEIGHBOR_SCAN_HEIGHT: float = 9999.0
 
 var res: TacticsArenaResource
 var _active_overlay_material_cache: Dictionary = {}
+var _attack_area_service
 
 
 ## Initialize the service with a TacticsArenaResource
 ## [param _res] The TacticsArenaResource to use
 func _init(_res: TacticsArenaResource) -> void:
 	res = _res
+	_attack_area_service = ATTACK_AREA_SERVICE.new()
 
 
 ## Set up the arena by connecting signals
@@ -51,6 +56,7 @@ func capture_navigation_state(arena: TacticsArena) -> Dictionary:
 			"reachable": tile.reachable,
 			"threatened_move": tile.threatened_move,
 			"attackable": tile.attackable,
+			"attack_area_preview": tile.attack_area_preview,
 			"pf_root": tile.pf_root,
 			"pf_distance": tile.pf_distance
 		}
@@ -72,6 +78,7 @@ func restore_navigation_state(arena: TacticsArena, state: Dictionary) -> void:
 		tile.reachable = tile_state.get("reachable", false)
 		tile.threatened_move = tile_state.get("threatened_move", false)
 		tile.attackable = tile_state.get("attackable", false)
+		tile.attack_area_preview = tile_state.get("attack_area_preview", false)
 		tile.pf_root = tile_state.get("pf_root", null)
 		tile.pf_distance = tile_state.get("pf_distance", 0.0)
 
@@ -246,6 +253,26 @@ func mark_attackable_tiles(arena: TacticsArena, root: TacticsTile, distance: flo
 	_refresh_active_tile_overlays(arena)
 
 
+## Preview resolved attack area footprint for currently hovered datum.
+func mark_attack_area_preview(arena: TacticsArena, attacker: TacticsPawn, datum_tile: TacticsTile, attack_profile: Resource) -> void:
+	for tile_node: Node in arena.get_node("Tiles").get_children():
+		if tile_node is TacticsTile:
+			(tile_node as TacticsTile).attack_area_preview = false
+
+	if not attacker or not is_instance_valid(attacker):
+		_refresh_active_tile_overlays(arena)
+		return
+	if not attack_profile or not attack_profile.get("area"):
+		_refresh_active_tile_overlays(arena)
+		return
+
+	var resolved_tiles: Array[TacticsTile] = _attack_area_service.resolve_affected_tiles(attacker, datum_tile, attack_profile, arena)
+	for tile: TacticsTile in resolved_tiles:
+		if tile and is_instance_valid(tile):
+			tile.attack_area_preview = true
+	_refresh_active_tile_overlays(arena)
+
+
 ## Build tile-based attack footprint for one pawn.
 ## [returns] Dictionary keyed by tile instance id.
 func build_attack_footprint(pawn: TacticsPawn) -> Dictionary:
@@ -375,7 +402,7 @@ func _refresh_active_tile_overlays(arena: TacticsArena) -> void:
 		if not (tile_node is TacticsTile):
 			continue
 		var tile: TacticsTile = tile_node as TacticsTile
-		if not tile.reachable and not tile.attackable and not tile.threatened_move:
+		if not tile.reachable and not tile.attackable and not tile.attack_area_preview and not tile.threatened_move:
 			continue
 
 		var anchor: Dictionary = tile.get_overlay_anchor()
@@ -483,7 +510,10 @@ func _build_attack_footprint_for_pawn(attacker: TacticsPawn) -> Dictionary:
 	if not origin_tile or not is_instance_valid(origin_tile):
 		return footprint
 
-	var attack_range: int = maxi(0, int(attacker.stats.attack_range))
+	var primary_attack = attacker.stats.get_primary_attack()
+	var attack_range: int = attacker.stats.get_primary_attack_range()
+	if primary_attack and primary_attack.area and int(primary_attack.area.get("targeting_mode")) == COMBAT_CONFIG.AreaTargetingMode.SELF_CENTERED:
+		attack_range = 0
 	var visited: Dictionary = {origin_tile.get_instance_id(): 0}
 	var queue: Array[TacticsTile] = [origin_tile]
 

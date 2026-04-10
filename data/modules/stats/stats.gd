@@ -1,71 +1,104 @@
 class_name Stats
 extends Node
-## Placeholder script that essentially replicates the Pawn Expertise Model into its own self-contained Stats class. 
-## 
-## This class can be made into a Resource Save utility for instantiated characters, for instance. Alternatively, it could pull the appropriate data from a character save and write back to it as needed.
 
-## Dictionary to store modifiers
+const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
+const COMBAT_FORMULA = preload("res://data/models/world/combat/formula/combat_formula.gd")
+
 var modifiers: Dictionary = {}
-## Override name for the character
 var override_name: String
-## Expertise of the character
 var expertise: String
-## Current level of the character
 var level: int = 1
-
-#region Base Stats
-## Movement Points (The radius the pawn can move)
-var movement: int
-## Jump height
-var jump: int
-## Maximum health
-var max_health: int
-## Current health
-var curr_health: int
-## Maximum mana
-var max_mana: int
-## Current mana
-var curr_mana: int
-## Stamina
-var sta: int
-## Current ACT gauge value
-var curr_act: float = 0.0
-## ACT gauge cap
-var max_act: float = 100.0
-## Sprite path
 var sprite: String
-#endregion
+var class_combat: Resource
 
-#region Offensive Stats
-## Attack power
-var attack_power: int
-## Attack range
-var attack_range: int
-## Whether the actor can fly (can move through occupied tiles)
-var can_fly: bool
-#endregion
+# Core stats
+var str: int = 0
+var intt: int = 0
+var agi: int = 0
+var dex: int = 0
+var vit: int = 0
+var wis: int = 0
+var spd: int = 0
+var sta: int = 0
+var can_fly: bool = false
 
-## Initialize stats from a StatsResource
-func import_stats(stats: StatsResource) -> void:
-	override_name = stats.override_name
-	expertise = stats.expertise
-	level = stats.level
-	movement = stats.movement
-	stats.set_jump()
-	max_health = stats.max_health
+# Dynamic combat state
+var movement: int = 0
+var jump: int = 0
+var max_health: int = 0
+var curr_health: int = 0
+var max_mana: int = 0
+var curr_mana: int = 0
+var curr_act: float = 0.0
+var max_act: float = 100.0
+
+var attack_1: Resource
+var attack_2: Resource
+var attack_3: Resource
+
+func import_stats(resource: StatsResource) -> void:
+	override_name = resource.override_name
+	expertise = resource.expertise
+	level = resource.level
+	sprite = resource.sprite
+	class_combat = resource.class_combat
+	str = resource.str
+	intt = resource.intt
+	agi = resource.agi
+	dex = resource.dex
+	vit = resource.vit
+	wis = resource.wis
+	spd = resource.spd
+	sta = resource.sta
+	can_fly = resource.can_fly
+	movement = resource.get_movement()
+	jump = resource.get_jump()
+	max_health = resource.get_max_health()
 	curr_health = max_health
-	max_mana = stats.max_mana
+	max_mana = resource.get_max_mana()
 	curr_mana = max_mana
-	sta = stats.sta
 	max_act = float(TacticsConfig.active_timeline.max_act)
 	curr_act = 0.0
-	sprite = stats.sprite
-	attack_power = stats.attack_power
-	attack_range = stats.attack_range
-	can_fly = stats.can_fly
+	attack_1 = resource.attack_1
+	attack_2 = resource.attack_2
+	attack_3 = resource.attack_3
 
-## Provided a health operation as a parameter (e.g. "-2", "1"), adds the value to current health. As a consequence, this function serves for both damage and healing.
-func apply_to_curr_health(new: int) -> void:
-	print("Target initial health: ", curr_health, " - Applying damage: ", new)
-	curr_health = clamp(curr_health + new, 0, max_health) # Apply health change and clamp to valid range
-	print("Target final health: ", curr_health)
+func get_attack(slot_index: int):
+	match slot_index:
+		0:
+			return attack_1
+		1:
+			return attack_2
+		2:
+			return attack_3
+		_:
+			return null
+
+func get_primary_attack():
+	for attack: Resource in [attack_1, attack_2, attack_3]:
+		if attack != null:
+			return attack
+	return null
+
+func get_primary_attack_range() -> int:
+	var primary_attack = get_primary_attack()
+	if primary_attack == null:
+		return 1
+	var attack_range_value: Variant = primary_attack.get("range")
+	if attack_range_value is int or attack_range_value is float:
+		return maxi(0, int(attack_range_value))
+	return 1
+
+func get_armor_type() -> int:
+	if class_combat == null:
+		return COMBAT_CONFIG.ArmorType.ARMORLESS
+	var armor_type: Variant = class_combat.get("armor_type")
+	if armor_type is int:
+		return int(armor_type)
+	return COMBAT_CONFIG.ArmorType.ARMORLESS
+
+func apply_to_curr_health(new_value: int) -> void:
+	curr_health = clampi(curr_health + new_value, 0, max_health)
+
+func get_act_recovery_per_sec() -> float:
+	return COMBAT_FORMULA.calc_act_recovery_per_sec(spd)

@@ -1,18 +1,18 @@
-[gd_resource type="Resource" script_class="StatsResource" load_steps=2 format=3 uid="uid://decaxywkgyj1r"]
+[gd_resource type="Resource" script_class="StatsResource" format=3 uid="uid://bxwfwac8mbm0k"]
 
-[ext_resource type="Script" path="res://data/models/world/stats/stats_res.gd" id="1_gb38y"]
+[ext_resource type="Script" uid="uid://8da4t2q30l84" path="res://data/models/world/stats/stats_res.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://data/models/world/combat/attack/examples/archer_pierce.tres" id="2_d8x5c"]
+[ext_resource type="Resource" path="res://data/models/world/combat/attack/examples/chemist_bomb.tres" id="3_attack_1"]
+[ext_resource type="Resource" path="res://data/models/world/combat/attack/examples/captain_thrust.tres" id="3_mwjsm"]
+[ext_resource type="Resource" path="res://data/models/world/combat/class/examples/archer_class.tres" id="4_gj4bv"]
 
 [resource]
-script = ExtResource("1_gb38y")
-override_name = ""
+script = ExtResource("1_stats")
 expertise = "Chemist"
 strategy = 1
-level = 1
 sprite = "res://assets/textures/actor/character/chr_pawn_chemist.png"
-movement = 4
-jump = 2.0
-max_health = 30
-max_mana = 22
 sta = 12
-attack_range = 3
-attack_power = 12
+class_combat = ExtResource("4_gj4bv")
+attack_1 = ExtResource("3_attack_1")
+attack_2 = ExtResource("2_d8x5c")
+attack_3 = ExtResource("3_mwjsm")

@@ -4,12 +4,16 @@ extends Resource
 
 ## Signal emitted when the actions menu visibility needs to be set.
 signal called_set_actions_menu_visibility
+## Signal emitted when attack types menu visibility needs to be set.
+signal called_set_attack_types_menu_visibility
 ## Signal emitted when the camera needs to be moved.
 signal called_move_camera
 ## Signal emitted when a pawn needs to be selected.
 signal called_select_pawn
 ## Signal emitted when a pawn needs to be selected for attack.
 signal called_select_pawn_to_attack
+## Signal emitted when attack type selection should be shown.
+signal called_select_attack_type
 ## Signal emitted when a new location needs to be selected.
 signal called_select_new_location
 ## Signal emitted when the cursor shape needs to be set to "move".
@@ -25,16 +29,20 @@ signal called_set_cursor_shape_to_arrow
 ## Dictionary of available actions and their corresponding methods.
 var actions: Dictionary = {
 	"Move": "_player_wants_to_move",
-	"Wait": "_player_wants_to_wait",
+	"Guard": "_player_wants_to_guard",
 	"Cancel": "_player_wants_to_cancel",
 	"Attack": "_player_wants_to_attack",
-	"Debug_next_turn": "_player_wants_to_skip_turn"
+	"Debug_next_turn": "_player_wants_to_skip_turn",
 }
 
 
 ## Sets the visibility of the actions menu.
 func set_actions_menu_visibility(v: bool, p: TacticsPawn) -> void:
 	called_set_actions_menu_visibility.emit(v, p)
+
+## Sets the visibility of the attack types menu.
+func set_attack_types_menu_visibility(v: bool, p: TacticsPawn) -> void:
+	called_set_attack_types_menu_visibility.emit(v, p)
 
 
 ## Initiates camera movement.
@@ -50,6 +58,10 @@ func select_pawn(player: TacticsPlayer) -> void:
 ## Selects a pawn to attack.
 func select_pawn_to_attack() -> void:
 	called_select_pawn_to_attack.emit()
+
+## Selects attack type.
+func select_attack_type() -> void:
+	called_select_attack_type.emit()
 
 
 ## Selects a new location.
