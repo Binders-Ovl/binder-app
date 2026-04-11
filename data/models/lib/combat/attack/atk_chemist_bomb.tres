@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AttackProfileResource" format=3 uid="uid://61ncvdqrvs88"]
+
+[ext_resource type="Script" uid="uid://dverwxtj5a54r" path="res://data/models/world/combat/attack/attack_profile_res.gd" id="1_attack"]
+[ext_resource type="Resource" path="res://data/models/lib/combat/area/area_aoe_target_cross.tres" id="2_area"]
+
+[resource]
+script = ExtResource("1_attack")
+display_name = "Acid Bomb"
+attack_type = 5
+base_attack = 13.0
+range = 3
+area = ExtResource("2_area")
+notes = "Ranged alchemy splash placeholder"

@@ -1,10 +1,10 @@
 [gd_resource type="Resource" script_class="StatsResource" format=3 uid="uid://bk880s63nhe11"]
 
 [ext_resource type="Script" uid="uid://8da4t2q30l84" path="res://data/models/world/stats/stats_res.gd" id="1_stats"]
-[ext_resource type="Resource" path="res://data/models/world/combat/class/examples/archer_class.tres" id="2_class"]
-[ext_resource type="Resource" path="res://data/models/world/combat/attack/examples/archer_pierce.tres" id="3_attack_1"]
-[ext_resource type="Resource" path="res://data/models/world/combat/attack/examples/captain_thrust.tres" id="3_sftkh"]
-[ext_resource type="Resource" path="res://data/models/world/combat/attack/examples/knight_slash.tres" id="4_attack_2"]
+[ext_resource type="Resource" path="res://data/models/lib/combat/class/class_archer.tres" id="2_class"]
+[ext_resource type="Resource" uid="uid://dg1o2ievdyyi8" path="res://data/models/lib/combat/attack/atk_archer_pierce.tres" id="3_attack_1"]
+[ext_resource type="Resource" uid="uid://b2n3pcurbqvg5" path="res://data/models/lib/combat/attack/atk_captain_thrust.tres" id="3_sftkh"]
+[ext_resource type="Resource" uid="uid://doqy57ehn11n0" path="res://data/models/lib/combat/attack/atk_knight_slash.tres" id="4_attack_2"]
 
 [resource]
 script = ExtResource("1_stats")

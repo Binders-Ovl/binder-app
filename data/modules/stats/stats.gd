@@ -1,7 +1,7 @@
 class_name Stats
 extends Node
 
-const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
+const COMBAT_CONFIG = preload("res://data/models/config/wcombat_config.gd")
 const COMBAT_FORMULA = preload("res://data/models/world/combat/formula/combat_formula.gd")
 
 var modifiers: Dictionary = {}
@@ -9,7 +9,7 @@ var override_name: String
 var expertise: String
 var level: int = 1
 var sprite: String
-var class_combat: Resource
+var class_combat: ClassCombatResource
 
 # Core stats
 var str: int = 0
@@ -32,11 +32,18 @@ var curr_mana: int = 0
 var curr_act: float = 0.0
 var max_act: float = 100.0
 
-var attack_1: Resource
-var attack_2: Resource
-var attack_3: Resource
+var attack_1: AttackProfileResource
+var attack_2: AttackProfileResource
+var attack_3: AttackProfileResource
 
 func import_stats(resource: StatsResource) -> void:
+	if resource == null:
+		push_error("Stats.import_stats: resource is null.")
+		return
+	var validation_errors: Array[String] = resource.validate()
+	if not validation_errors.is_empty():
+		push_error("Stats.import_stats: invalid StatsResource: %s" % "; ".join(validation_errors))
+
 	override_name = resource.override_name
 	expertise = resource.expertise
 	level = resource.level
@@ -63,7 +70,7 @@ func import_stats(resource: StatsResource) -> void:
 	attack_2 = resource.attack_2
 	attack_3 = resource.attack_3
 
-func get_attack(slot_index: int):
+func get_attack(slot_index: int) -> AttackProfileResource:
 	match slot_index:
 		0:
 			return attack_1
@@ -74,8 +81,8 @@ func get_attack(slot_index: int):
 		_:
 			return null
 
-func get_primary_attack():
-	for attack: Resource in [attack_1, attack_2, attack_3]:
+func get_primary_attack() -> AttackProfileResource:
+	for attack: AttackProfileResource in [attack_1, attack_2, attack_3]:
 		if attack != null:
 			return attack
 	return null

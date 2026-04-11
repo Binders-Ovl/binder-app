@@ -44,7 +44,7 @@ var targets: Node = null
 ## Selected attack slot index.
 var selected_attack_slot: int = -1
 ## Selected attack profile.
-var selected_attack: Resource = null
+var selected_attack: AttackProfileResource = null
 
 ## Flag to control the display of opponent stats
 var display_opponent_stats: bool = false

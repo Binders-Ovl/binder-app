@@ -1,10 +1,10 @@
 [gd_resource type="Resource" script_class="StatsResource" format=3 uid="uid://bxwfwac8mbm0k"]
 
 [ext_resource type="Script" uid="uid://8da4t2q30l84" path="res://data/models/world/stats/stats_res.gd" id="1_stats"]
-[ext_resource type="Resource" path="res://data/models/world/combat/attack/examples/archer_pierce.tres" id="2_d8x5c"]
-[ext_resource type="Resource" path="res://data/models/world/combat/attack/examples/chemist_bomb.tres" id="3_attack_1"]
-[ext_resource type="Resource" path="res://data/models/world/combat/attack/examples/captain_thrust.tres" id="3_mwjsm"]
-[ext_resource type="Resource" path="res://data/models/world/combat/class/examples/archer_class.tres" id="4_gj4bv"]
+[ext_resource type="Resource" path="res://data/models/lib/combat/attack/atk_archer_pierce.tres" id="2_d8x5c"]
+[ext_resource type="Resource" path="res://data/models/lib/combat/attack/atk_chemist_bomb.tres" id="3_attack_1"]
+[ext_resource type="Resource" path="res://data/models/lib/combat/attack/atk_captain_thrust.tres" id="3_mwjsm"]
+[ext_resource type="Resource" path="res://data/models/lib/combat/class/class_archer.tres" id="4_gj4bv"]
 
 [resource]
 script = ExtResource("1_stats")

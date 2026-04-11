@@ -1,8 +1,6 @@
 class_name TacticsControlsSelectionService
 extends RefCounted
 
-const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
-
 var participant: TacticsParticipantResource
 var arena: TacticsArenaResource
 var controls: TacticsControlsResource
@@ -58,6 +56,10 @@ func choose_attack_type(slot_index: int) -> void:
 	var attack = participant.curr_pawn.stats.get_attack(slot_index)
 	if attack == null:
 		return
+	var attack_errors: Array[String] = attack.validate()
+	if not attack_errors.is_empty():
+		push_error("TacticsControlsSelectionService.choose_attack_type: invalid attack profile: %s" % "; ".join(attack_errors))
+		return
 	participant.selected_attack_slot = slot_index
 	participant.selected_attack = attack
 	participant.selected_attack_datum = null
@@ -71,6 +73,10 @@ func select_pawn_to_attack(ctrl: TacticsControls) -> void:
 		participant.stage = participant.STAGE_SELECT_PAWN
 		return
 	if participant.selected_attack == null:
+		push_error("TacticsControlsSelectionService.select_pawn_to_attack: selected_attack is null.")
+		participant.stage = participant.STAGE_SELECT_ATTACK_TYPE
+		return
+	if not _is_attack_profile_valid(participant.selected_attack):
 		participant.stage = participant.STAGE_SELECT_ATTACK_TYPE
 		return
 
@@ -211,7 +217,7 @@ func _refresh_live_move_context(ctrl: TacticsControls) -> void:
 	arena_node.mark_reachable_tiles(curr_tile, pawn.stats.movement)
 
 
-func _refresh_live_attack_context(attack) -> void:
+func _refresh_live_attack_context(attack: AttackProfileResource) -> void:
 	var pawn: TacticsPawn = participant.curr_pawn
 	if not pawn or not is_instance_valid(pawn) or not pawn.is_alive():
 		return
@@ -222,13 +228,19 @@ func _refresh_live_attack_context(attack) -> void:
 	if not arena_node:
 		return
 
-	var attack_range: float = float(attack.range)
-	if attack.area and int(attack.area.get("targeting_mode")) == COMBAT_CONFIG.AreaTargetingMode.SELF_CENTERED:
-		attack_range = 0.0
-
 	arena_node.reset_all_tile_markers()
-	arena_node.process_surrounding_tiles(curr_tile, attack_range, 9999.0, [], false, true)
-	arena_node.mark_attackable_tiles(curr_tile, attack_range)
+	arena_node.mark_attackable_tiles(curr_tile, float(attack.range), attack)
+
+
+func _is_attack_profile_valid(attack: AttackProfileResource) -> bool:
+	if attack == null:
+		push_error("TacticsControlsSelectionService: attack profile is null.")
+		return false
+	var attack_errors: Array[String] = attack.validate()
+	if attack_errors.is_empty():
+		return true
+	push_error("TacticsControlsSelectionService: invalid attack profile: %s" % "; ".join(attack_errors))
+	return false
 
 
 func _path_has_movement(path: Array, from_position: Vector3) -> bool:

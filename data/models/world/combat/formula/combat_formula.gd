@@ -1,7 +1,7 @@
-class_name CombatFormula
+﻿class_name CombatFormula
 extends RefCounted
 
-const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
+const COMBAT_CONFIG = preload("res://data/models/config/wcombat_config.gd")
 
 static func calc_hit_chance(agi_atk: float, dex_def: float) -> float:
 	var denominator: float = agi_atk + dex_def + COMBAT_CONFIG.HIT_NORMALIZER_OFFSET
@@ -84,3 +84,4 @@ static func calc_crit_chance(agi_value: int, crit_baseline: float, crit_per_agi:
 
 static func calc_act_recovery_per_sec(spd_value: int) -> float:
 	return COMBAT_CONFIG.ACT_BASE_RECOVERY + float(spd_value) * COMBAT_CONFIG.ACT_SPD_MULTIPLIER
+

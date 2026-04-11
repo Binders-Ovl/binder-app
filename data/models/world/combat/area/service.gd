@@ -2,7 +2,7 @@ class_name TacticsAttackAreaService
 extends RefCounted
 ## Runtime resolver for authored attack-area patterns.
 
-const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
+const COMBAT_CONFIG = preload("res://data/models/config/wcombat_config.gd")
 
 const DIR_NORTH: Vector2i = Vector2i(0, -1)
 const DIR_SOUTH: Vector2i = Vector2i(0, 1)
@@ -15,12 +15,24 @@ func resolve_affected_tiles(attacker: TacticsPawn, datum_tile: TacticsTile, atta
 	var tiles: Array[TacticsTile] = []
 	if not attacker or not is_instance_valid(attacker):
 		return tiles
-	if not attack_profile or attack_profile.area == null:
+	if not attack_profile:
+		push_error("TacticsAttackAreaService.resolve_affected_tiles: attack_profile is null.")
 		return tiles
 	if not arena or not is_instance_valid(arena):
 		return tiles
 
-	var area: Resource = attack_profile.get("area")
+	if not (attack_profile is AttackProfileResource):
+		push_error("TacticsAttackAreaService.resolve_affected_tiles: attack_profile must be AttackProfileResource.")
+		return tiles
+	var attack: AttackProfileResource = attack_profile as AttackProfileResource
+	var attack_errors: Array[String] = attack.validate()
+	if not attack_errors.is_empty():
+		push_error("Invalid AttackProfileResource: %s" % "; ".join(attack_errors))
+		return tiles
+	if attack.area == null:
+		return tiles
+
+	var area: AttackAreaResource = attack.area
 	var effective_datum: TacticsTile = _resolve_effective_datum(attacker, datum_tile, area)
 	if effective_datum == null:
 		return tiles
@@ -43,7 +55,7 @@ func resolve_affected_tiles(attacker: TacticsPawn, datum_tile: TacticsTile, atta
 		tiles.append(tile)
 	return tiles
 
-func resolve_forward_direction(attacker: TacticsPawn, datum_tile: TacticsTile, area: Resource) -> Vector2i:
+func resolve_forward_direction(attacker: TacticsPawn, datum_tile: TacticsTile, area: AttackAreaResource) -> Vector2i:
 	if area == null:
 		return DIR_NORTH
 	var targeting_mode: int = int(area.get("targeting_mode"))
@@ -68,7 +80,7 @@ func rotate_offset(local_offset: Vector2i, forward: Vector2i) -> Vector2i:
 		_:
 			return local_offset
 
-func _resolve_effective_datum(attacker: TacticsPawn, datum_tile: TacticsTile, area: Resource) -> TacticsTile:
+func _resolve_effective_datum(attacker: TacticsPawn, datum_tile: TacticsTile, area: AttackAreaResource) -> TacticsTile:
 	if attacker == null or not is_instance_valid(attacker):
 		return null
 	if area != null and int(area.get("targeting_mode")) == COMBAT_CONFIG.AreaTargetingMode.SELF_CENTERED:

@@ -1,20 +1,22 @@
 [gd_resource type="Resource" script_class="AttackProfileResource" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://data/models/world/combat/attack/attack_profile_res.gd" id="1_attack"]
-[ext_resource type="Resource" path="res://data/models/world/combat/area/examples/cleave.tres" id="2_area"]
+[ext_resource type="Resource" path="res://data/models/lib/combat/area/area_aoe_target_cross.tres" id="2_area"]
 
 [resource]
 script = ExtResource("1_attack")
-display_name = "Hack"
-attack_type = 6
-base_attack = 24.0
-is_magic = false
-range = 1
+display_name = "Smite"
+attack_type = 4
+base_attack = 16.0
+is_magic = true
+range = 3
+min_range = 1
+range_pattern = 2
 act_cost_mode = 1
-act_cost_absolute = 40.0
+act_cost_absolute = 35.0
 act_cost_multiplier = 1.0
 can_target_flying = true
 elevation_modifier = 1.0
-damage_modifier = 1.15
+damage_modifier = 1.0
 area = ExtResource("2_area")
-notes = "Heavy frontal swing"
+notes = "Diagonal cast with cross-shaped impact"

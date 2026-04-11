@@ -1,7 +1,7 @@
 class_name TacticsParticipantCombatService
 extends RefCounted
 
-const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
+const COMBAT_CONFIG = preload("res://data/models/config/wcombat_config.gd")
 const COMBAT_FORMULA = preload("res://data/models/world/combat/formula/combat_formula.gd")
 const ATTACK_AREA_SERVICE = preload("res://data/models/world/combat/area/service.gd")
 
@@ -10,6 +10,9 @@ var camera: TacticsCameraResource
 var controls: TacticsControlsResource
 var area_service
 var _rng_seeded: bool = false
+var _pending_attack_target_ids: Array[int] = []
+
+const TILE_OCCUPANCY_TOLERANCE: float = 0.6
 
 func _init(_res: TacticsParticipantResource, _camera: TacticsCameraResource, _controls: TacticsControlsResource) -> void:
 	res = _res
@@ -23,16 +26,26 @@ func attack_pawn(delta: float, is_player: bool) -> void:
 
 	var acting_pawn: TacticsPawn = res.curr_pawn
 	if not acting_pawn or not is_instance_valid(acting_pawn):
+		_clear_pending_attack_targets()
 		_reset_to_selection()
 		return
 
-	var attack_profile = res.selected_attack
+	var attack_profile: AttackProfileResource = res.selected_attack
 	if attack_profile == null:
+		_clear_pending_attack_targets()
+		push_error("TacticsParticipantCombatService.attack_pawn: selected_attack is null.")
+		res.stage = res.STAGE_SELECT_ATTACK_TYPE if is_player else res.STAGE_SELECT_PAWN
+		return
+	var attack_errors: Array[String] = attack_profile.validate()
+	if not attack_errors.is_empty():
+		_clear_pending_attack_targets()
+		push_error("TacticsParticipantCombatService.attack_pawn: invalid selected attack profile: %s" % "; ".join(attack_errors))
 		res.stage = res.STAGE_SELECT_ATTACK_TYPE if is_player else res.STAGE_SELECT_PAWN
 		return
 
 	var datum_tile: TacticsTile = _resolve_attack_datum_tile(acting_pawn, attack_profile)
 	if datum_tile == null:
+		_clear_pending_attack_targets()
 		res.stage = res.STAGE_SELECT_ATTACK_TARGET if is_player else res.STAGE_SELECT_PAWN
 		return
 
@@ -43,8 +56,10 @@ func attack_pawn(delta: float, is_player: bool) -> void:
 	if is_zero_approx(acting_pawn.res.wait_delay):
 		var attack_cost: float = attack_profile.get_effective_act_cost(float(TacticsConfig.action_cost.attack))
 		if not acting_pawn.spend_act(attack_cost):
+			_clear_pending_attack_targets()
 			res.stage = res.STAGE_SHOW_ACTIONS if is_player else res.STAGE_SELECT_PAWN
 			return
+		_pending_attack_target_ids = _snapshot_affected_target_ids(acting_pawn, datum_tile, attack_profile)
 
 	var hit_frame_time: float = TacticsPawnResource.MIN_TIME_FOR_ATTACK / 4.0
 	var hit_now: bool = acting_pawn.res.wait_delay <= hit_frame_time and (acting_pawn.res.wait_delay + delta) > hit_frame_time
@@ -60,6 +75,7 @@ func attack_pawn(delta: float, is_player: bool) -> void:
 		acting_pawn.res.wait_delay = 0.0
 		acting_pawn.res.set_attacking(false)
 		acting_pawn.refresh_action_state()
+	_clear_pending_attack_targets()
 
 	res.attackable_pawn = null
 	res.selected_attack_datum = null
@@ -85,7 +101,7 @@ func _resolve_visual_target(datum_tile: TacticsTile) -> TacticsPawn:
 	return datum_tile.get_tile_occupier() as TacticsPawn
 
 
-func _resolve_attack_datum_tile(attacker: TacticsPawn, attack_profile) -> TacticsTile:
+func _resolve_attack_datum_tile(attacker: TacticsPawn, attack_profile: AttackProfileResource) -> TacticsTile:
 	if attack_profile == null or attack_profile.area == null:
 		return null
 	if int(attack_profile.area.get("targeting_mode")) == COMBAT_CONFIG.AreaTargetingMode.SELF_CENTERED:
@@ -97,8 +113,10 @@ func _resolve_attack_datum_tile(attacker: TacticsPawn, attack_profile) -> Tactic
 	return null
 
 
-func _apply_attack_area_damage(attacker: TacticsPawn, datum_tile: TacticsTile, attack_profile) -> void:
-	var targets: Array[TacticsPawn] = _resolve_affected_targets(attacker, datum_tile, attack_profile)
+func _apply_attack_area_damage(attacker: TacticsPawn, datum_tile: TacticsTile, attack_profile: AttackProfileResource) -> void:
+	var targets: Array[TacticsPawn] = _resolve_pending_targets(attacker)
+	if targets.is_empty():
+		targets = _resolve_affected_targets(attacker, datum_tile, attack_profile)
 	if targets.is_empty():
 		return
 	for target: TacticsPawn in targets:
@@ -111,7 +129,7 @@ func _apply_attack_area_damage(attacker: TacticsPawn, datum_tile: TacticsTile, a
 		target.stats.apply_to_curr_health(-damage)
 
 
-func _resolve_affected_targets(attacker: TacticsPawn, datum_tile: TacticsTile, attack_profile) -> Array[TacticsPawn]:
+func _resolve_affected_targets(attacker: TacticsPawn, datum_tile: TacticsTile, attack_profile: AttackProfileResource) -> Array[TacticsPawn]:
 	var targets: Array[TacticsPawn] = []
 	var arena_node: TacticsArena = attacker.get_node_or_null("%TacticsArena")
 	if not arena_node:
@@ -122,12 +140,35 @@ func _resolve_affected_targets(attacker: TacticsPawn, datum_tile: TacticsTile, a
 	for tile: TacticsTile in affected_tiles:
 		if tile == null or not is_instance_valid(tile):
 			continue
-		var pawn: TacticsPawn = tile.get_tile_occupier() as TacticsPawn
+		for pawn: TacticsPawn in _get_attack_targets_for_tile(attacker, tile, arena_node):
+			if pawn == attacker:
+				continue
+			if not attack_profile.can_target_flying and pawn.stats.can_fly:
+				continue
+			var key: int = pawn.get_instance_id()
+			if visited.has(key):
+				continue
+			visited[key] = true
+			targets.append(pawn)
+	return targets
+
+
+func _snapshot_affected_target_ids(attacker: TacticsPawn, datum_tile: TacticsTile, attack_profile: AttackProfileResource) -> Array[int]:
+	var ids: Array[int] = []
+	for target: TacticsPawn in _resolve_affected_targets(attacker, datum_tile, attack_profile):
+		if target and is_instance_valid(target) and target.is_alive():
+			ids.append(target.get_instance_id())
+	return ids
+
+
+func _resolve_pending_targets(attacker: TacticsPawn) -> Array[TacticsPawn]:
+	var targets: Array[TacticsPawn] = []
+	if _pending_attack_target_ids.is_empty():
+		return targets
+	var visited: Dictionary = {}
+	for id_value: int in _pending_attack_target_ids:
+		var pawn: TacticsPawn = _find_pawn_by_instance_id(attacker, id_value)
 		if pawn == null or not is_instance_valid(pawn) or not pawn.is_alive():
-			continue
-		if pawn == attacker:
-			continue
-		if not attack_profile.can_target_flying and pawn.stats.can_fly:
 			continue
 		var key: int = pawn.get_instance_id()
 		if visited.has(key):
@@ -137,7 +178,63 @@ func _resolve_affected_targets(attacker: TacticsPawn, datum_tile: TacticsTile, a
 	return targets
 
 
-func _compute_attack_result(attacker: TacticsPawn, target: TacticsPawn, attack_profile) -> Dictionary:
+func _get_attack_targets_for_tile(attacker: TacticsPawn, tile: TacticsTile, arena_node: TacticsArena) -> Array[TacticsPawn]:
+	var targets: Array[TacticsPawn] = []
+	var visited: Dictionary = {}
+
+	var occupier: TacticsPawn = tile.get_tile_occupier() as TacticsPawn
+	if occupier and is_instance_valid(occupier) and occupier.is_alive():
+		targets.append(occupier)
+		visited[occupier.get_instance_id()] = true
+
+	if arena_node and arena_node.res:
+		var owner_id: int = int(arena_node.res.move_tile_reservations.get(tile.get_instance_id(), 0))
+		if owner_id != 0:
+			var reserved_owner: TacticsPawn = _find_pawn_by_instance_id(attacker, owner_id)
+			if reserved_owner and is_instance_valid(reserved_owner) and reserved_owner.is_alive():
+				var reserved_key: int = reserved_owner.get_instance_id()
+				if not visited.has(reserved_key):
+					targets.append(reserved_owner)
+					visited[reserved_key] = true
+
+	for pawn: TacticsPawn in _get_all_living_pawns(attacker):
+		if pawn == null or not is_instance_valid(pawn) or not pawn.is_alive():
+			continue
+		var key: int = pawn.get_instance_id()
+		if visited.has(key):
+			continue
+		var pawn_tile: TacticsTile = pawn.get_tile()
+		if pawn_tile == tile or pawn.global_position.distance_to(tile.global_position) <= TILE_OCCUPANCY_TOLERANCE:
+			targets.append(pawn)
+			visited[key] = true
+
+	return targets
+
+
+func _get_all_living_pawns(attacker: TacticsPawn) -> Array[TacticsPawn]:
+	var pawns: Array[TacticsPawn] = []
+	if attacker == null or not is_instance_valid(attacker):
+		return pawns
+	var scene: Node = attacker.get_tree().current_scene
+	if scene == null:
+		return pawns
+	for node: Node in scene.find_children("*", "TacticsPawn", true, false):
+		var pawn: TacticsPawn = node as TacticsPawn
+		if pawn and is_instance_valid(pawn) and pawn.is_alive():
+			pawns.append(pawn)
+	return pawns
+
+
+func _find_pawn_by_instance_id(attacker: TacticsPawn, pawn_id: int) -> TacticsPawn:
+	if pawn_id == 0:
+		return null
+	for pawn: TacticsPawn in _get_all_living_pawns(attacker):
+		if pawn.get_instance_id() == pawn_id:
+			return pawn
+	return null
+
+
+func _compute_attack_result(attacker: TacticsPawn, target: TacticsPawn, attack_profile: AttackProfileResource) -> Dictionary:
 	var attacker_stats: Stats = attacker.stats
 	var target_stats: Stats = target.stats
 	var attacker_class = attacker_stats.class_combat
@@ -208,6 +305,11 @@ func _seed_rng_once() -> void:
 
 
 func _reset_to_selection() -> void:
+	_clear_pending_attack_targets()
 	res.attackable_pawn = null
 	res.clear_attack_selection()
 	res.stage = res.STAGE_SELECT_PAWN
+
+
+func _clear_pending_attack_targets() -> void:
+	_pending_attack_target_ids.clear()

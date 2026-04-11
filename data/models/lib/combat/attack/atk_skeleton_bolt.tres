@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AttackProfileResource" format=3 uid="uid://bttd05tjd6wbq"]
+
+[ext_resource type="Script" uid="uid://dverwxtj5a54r" path="res://data/models/world/combat/attack/attack_profile_res.gd" id="1_attack"]
+[ext_resource type="Resource" path="res://data/models/lib/combat/area/area_single_target.tres" id="2_area"]
+
+[resource]
+script = ExtResource("1_attack")
+display_name = "Bone Bolt"
+attack_type = 4
+base_attack = 12.0
+is_magic = true
+range = 3
+area = ExtResource("2_area")
+notes = "Enemy ranged magic placeholder"

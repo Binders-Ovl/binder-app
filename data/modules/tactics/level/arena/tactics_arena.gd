@@ -69,14 +69,15 @@ func mark_reachable_tiles(root: TacticsTile, distance: float) -> void:
 	serv.mark_reachable_tiles(self, root, distance)
 
 
-## Marks tiles attackable within a certain distance from a root tile
+## Marks tiles attackable from either scalar range or attack profile range pattern.
 ## [param root] The starting tile
-## [param distance] The maximum attack distance
-func mark_attackable_tiles(root: TacticsTile, distance: float) -> void:
-	serv.mark_attackable_tiles(self, root, distance)
+## [param distance] The maximum attack distance for legacy scalar behavior
+## [param attack_profile] Optional attack profile with range pattern and min range rules
+func mark_attackable_tiles(root: TacticsTile, distance: float, attack_profile: AttackProfileResource = null) -> void:
+	serv.mark_attackable_tiles(self, root, distance, attack_profile)
 
 ## Marks preview attack area tiles for current hover datum and attack profile.
-func mark_attack_area_preview(attacker: TacticsPawn, datum_tile: TacticsTile, attack_profile: Resource) -> void:
+func mark_attack_area_preview(attacker: TacticsPawn, datum_tile: TacticsTile, attack_profile: AttackProfileResource) -> void:
 	serv.mark_attack_area_preview(self, attacker, datum_tile, attack_profile)
 
 

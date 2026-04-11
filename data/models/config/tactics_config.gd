@@ -5,6 +5,8 @@ extends Node3D
 ## This class contains static properties and methods for configuring various aspects
 ## of the tactics system, including colors, materials, pawn properties, and view settings.
 
+const WCOMBAT_CONFIG = preload("res://data/models/config/wcombat_config.gd")
+
 #region: --- Props ---
 ## Dictionary of color codes used in the tactics system. ff4242BF
 static var color: Dictionary = {
@@ -59,14 +61,14 @@ static var pawn: Dictionary = {
 ## Dictionary for the active timeline energy model.
 static var active_timeline: Dictionary = {
 	"max_act": 100.0, ## ACT gauge cap
-	"base_recovery": 2.5, ## Base ACT recovered per second
-	"sta_multiplier": 1.35, ## STA contribution to ACT recovered per second
+	"base_recovery": WCOMBAT_CONFIG.ACT_BASE_RECOVERY, ## Base ACT recovered per second
+	"sta_multiplier": WCOMBAT_CONFIG.ACT_SPD_MULTIPLIER, ## STA contribution to ACT recovered per second
 }
 
 ## Dictionary of ACT costs per action type.
 static var action_cost: Dictionary = {
 	"move": 70.0,
-	"attack": 30.0,
+	"attack": WCOMBAT_CONFIG.DEFAULT_ATTACK_ACT_COST,
 	"item": 20.0,
 	"skill": 50.0,
 }

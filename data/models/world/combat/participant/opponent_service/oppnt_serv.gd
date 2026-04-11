@@ -2,8 +2,6 @@ class_name TacticsOpponentService
 extends RefCounted
 ## Service class for TacticsOpponent
 
-const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
-
 ## Resource containing participant data and configurations
 var res: TacticsParticipantResource
 ## Resource for camera-related data and configurations
@@ -99,8 +97,14 @@ func choose_pawn_to_attack() -> void:
 	if not res.curr_pawn or not is_instance_valid(res.curr_pawn):
 		res.stage = res.STAGE_SELECT_PAWN
 		return
-	var attack_profile = res.curr_pawn.stats.get_primary_attack()
+	var attack_profile: AttackProfileResource = res.curr_pawn.stats.get_primary_attack()
 	if attack_profile == null:
+		push_error("TacticsOpponentService.choose_pawn_to_attack: primary attack is null.")
+		res.stage = res.STAGE_SELECT_PAWN
+		return
+	var attack_errors: Array[String] = attack_profile.validate()
+	if not attack_errors.is_empty():
+		push_error("TacticsOpponentService.choose_pawn_to_attack: invalid attack profile: %s" % "; ".join(attack_errors))
 		res.stage = res.STAGE_SELECT_PAWN
 		return
 	res.selected_attack_slot = 0
@@ -109,12 +113,8 @@ func choose_pawn_to_attack() -> void:
 	if not curr_tile:
 		res.stage = res.STAGE_SELECT_PAWN
 		return
-	var attack_range: float = float(attack_profile.range)
-	if attack_profile.area and int(attack_profile.area.get("targeting_mode")) == COMBAT_CONFIG.AreaTargetingMode.SELF_CENTERED:
-		attack_range = 0.0
 	arena.reset_all_tile_markers()
-	arena.process_surrounding_tiles(curr_tile, attack_range, 9999.0, [], false, true)
-	arena.mark_attackable_tiles(curr_tile, attack_range)
+	arena.mark_attackable_tiles(curr_tile, float(attack_profile.range), attack_profile)
 	
 	res.attackable_pawn = arena.get_weakest_attackable_pawn(res.targets.get_children())
 	if res.attackable_pawn:

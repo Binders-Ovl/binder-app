@@ -1,20 +1,22 @@
 [gd_resource type="Resource" script_class="AttackProfileResource" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://data/models/world/combat/attack/attack_profile_res.gd" id="1_attack"]
-[ext_resource type="Resource" path="res://data/models/world/combat/area/examples/aoe_target_cross.tres" id="2_area"]
+[ext_resource type="Resource" path="res://data/models/lib/combat/area/area_cleave.tres" id="2_area"]
 
 [resource]
 script = ExtResource("1_attack")
-display_name = "Acid Bomb"
-attack_type = 5
-base_attack = 13.0
+display_name = "Hack"
+attack_type = 6
+base_attack = 24.0
 is_magic = false
-range = 3
-act_cost_mode = 0
-act_cost_absolute = 0.0
+range = 1
+min_range = 1
+range_pattern = 0
+act_cost_mode = 1
+act_cost_absolute = 40.0
 act_cost_multiplier = 1.0
 can_target_flying = true
 elevation_modifier = 1.0
-damage_modifier = 1.0
+damage_modifier = 1.15
 area = ExtResource("2_area")
-notes = "Ranged alchemy splash placeholder"
+notes = "Heavy frontal swing"

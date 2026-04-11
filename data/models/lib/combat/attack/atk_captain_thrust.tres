@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="AttackProfileResource" format=3 uid="uid://b2n3pcurbqvg5"]
+
+[ext_resource type="Script" uid="uid://dverwxtj5a54r" path="res://data/models/world/combat/attack/attack_profile_res.gd" id="1_attack"]
+[ext_resource type="Resource" path="res://data/models/lib/combat/area/area_pierce_line.tres" id="2_area"]
+
+[resource]
+script = ExtResource("1_attack")
+display_name = "Captain Thrust"
+attack_type = 2
+base_attack = 20.0
+range = 4
+range_pattern = 1
+act_cost_mode = 1
+act_cost_absolute = 45.0
+area = ExtResource("2_area")
+notes = "Long spear thrust placeholder"

@@ -2,7 +2,7 @@ class_name TacticsLevel
 extends Node3D
 ## Tactics system initialization and continuous active timeline management.
 
-const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
+const COMBAT_CONFIG = preload("res://data/models/config/wcombat_config.gd")
 const COMBAT_FORMULA = preload("res://data/models/world/combat/formula/combat_formula.gd")
 
 #region: --- Props ---
@@ -91,7 +91,12 @@ func _process_enemy_timeline_actions() -> void:
 			continue
 
 		enemy_pawn.refresh_action_state()
-		var attack_profile = enemy_pawn.stats.get_primary_attack()
+		var attack_profile: AttackProfileResource = enemy_pawn.stats.get_primary_attack()
+		if attack_profile != null:
+			var attack_errors: Array[String] = attack_profile.validate()
+			if not attack_errors.is_empty():
+				push_error("TacticsLevel enemy attack profile invalid for %s: %s" % [enemy_pawn.name, "; ".join(attack_errors)])
+				attack_profile = null
 		var attack_target: TacticsPawn = _nearest_attackable_target(enemy_pawn, player_pawns)
 		if attack_profile and attack_target:
 			var attack_cost: float = attack_profile.get_effective_act_cost(float(TacticsConfig.action_cost.attack))
@@ -124,7 +129,7 @@ func _process_enemy_timeline_actions() -> void:
 	if consumed_action:
 		return
 
-func _apply_ai_attack(attacker: TacticsPawn, target: TacticsPawn, attack_profile) -> void:
+func _apply_ai_attack(attacker: TacticsPawn, target: TacticsPawn, attack_profile: AttackProfileResource) -> void:
 	var hit_roll: int = randi_range(1, 100)
 	if not COMBAT_FORMULA.roll_hit(attacker.stats.agi, target.stats.dex, hit_roll):
 		return
@@ -134,7 +139,7 @@ func _apply_ai_attack(attacker: TacticsPawn, target: TacticsPawn, attack_profile
 		return
 	target.stats.apply_to_curr_health(-damage)
 
-func _resolve_attack_damage(attacker: TacticsPawn, target: TacticsPawn, attack_profile) -> int:
+func _resolve_attack_damage(attacker: TacticsPawn, target: TacticsPawn, attack_profile: AttackProfileResource) -> int:
 	var attacker_class = attacker.stats.class_combat
 	var target_class = target.stats.class_combat
 	var type_mod: float = COMBAT_FORMULA.get_type_mod(attack_profile.attack_type, target.stats.get_armor_type())

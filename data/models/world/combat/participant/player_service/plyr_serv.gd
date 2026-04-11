@@ -2,8 +2,6 @@ class_name TacticsPlayerService
 extends RefCounted
 ## Service class for TacticsPlayer
 
-const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
-
 ## Resource containing participant data and configurations
 var res: TacticsParticipantResource
 ## Resource for camera-related data and configurations
@@ -122,19 +120,21 @@ func display_attackable_targets() -> void:
 		_fallback_to_pawn_selection()
 		return
 
-	var attack_profile = res.selected_attack
+	var attack_profile: AttackProfileResource = res.selected_attack
 	if attack_profile == null:
+		push_error("TacticsPlayerService.display_attackable_targets: selected_attack is null.")
+		res.stage = res.STAGE_SELECT_ATTACK_TYPE
+		return
+	var attack_errors: Array[String] = attack_profile.validate()
+	if not attack_errors.is_empty():
+		push_error("TacticsPlayerService.display_attackable_targets: invalid selected attack profile: %s" % "; ".join(attack_errors))
 		res.stage = res.STAGE_SELECT_ATTACK_TYPE
 		return
 	
 	res.display_opponent_stats = true
 	
 	camera.target = p
-	var attack_range: float = float(attack_profile.range)
-	if attack_profile.area and int(attack_profile.area.get("targeting_mode")) == COMBAT_CONFIG.AreaTargetingMode.SELF_CENTERED:
-		attack_range = 0.0
-	arena.process_surrounding_tiles(curr_tile, attack_range, 9999.0, [], false, true)
-	arena.mark_attackable_tiles(curr_tile, attack_range)
+	arena.mark_attackable_tiles(curr_tile, float(attack_profile.range), attack_profile)
 	res.stage = res.STAGE_SELECT_ATTACK_TARGET
 
 

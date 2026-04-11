@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AttackProfileResource" format=3 uid="uid://dg1o2ievdyyi8"]
+
+[ext_resource type="Script" uid="uid://dverwxtj5a54r" path="res://data/models/world/combat/attack/attack_profile_res.gd" id="1_attack"]
+[ext_resource type="Resource" path="res://data/models/lib/combat/area/area_aoe_target_cross.tres" id="1_dks81"]
+
+[resource]
+script = ExtResource("1_attack")
+display_name = "Piercing Arrow"
+attack_type = 3
+base_attack = 14.0
+range = 3
+min_range = 2
+range_pattern = 1
+act_cost_mode = 2
+act_cost_multiplier = 1.25
+area = ExtResource("1_dks81")
+notes = "Cross-line shot with dead zone"

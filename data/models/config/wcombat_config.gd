@@ -1,4 +1,4 @@
-class_name CombatConfig
+class_name WCombatConfig
 extends RefCounted
 
 const HIT_BASELINE: float = 72.0
@@ -36,6 +36,7 @@ enum AttackType { BLUNT, SLASH, STAB, PIERCE, MAGIC, IMPACT, HACK }
 enum ArmorType { ARMORLESS, TUNIC, LIGHT, MEDIUM, HEAVY }
 enum AttackCostMode { DEFAULT, ABSOLUTE, MULTIPLIER }
 enum AreaTargetingMode { TARGET_DATUM, FORWARD_FROM_USER, SELF_CENTERED }
+enum AttackRangePattern { DIAMOND, CROSS, SPREAD_DIAG }
 
 const TYPE_MOD_TABLE := {
 	AttackType.BLUNT: { ArmorType.ARMORLESS: 0.95, ArmorType.TUNIC: 1.00, ArmorType.LIGHT: 1.00, ArmorType.MEDIUM: 1.10, ArmorType.HEAVY: 1.15 },

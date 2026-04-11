@@ -2,11 +2,10 @@ class_name TacticsArenaService
 extends RefCounted
 ## Service class for TacticsArena
 
-const COMBAT_CONFIG = preload("res://data/models/world/combat/config/combat_config.gd")
-
 ## The service we inject into every tile
 const TILE_SERVICE = preload("res://data/models/world/combat/arena/tile_service/service.gd")
 const ATTACK_AREA_SERVICE = preload("res://data/models/world/combat/area/service.gd")
+const ATTACK_RANGE_SERVICE = preload("res://data/models/world/combat/range/service.gd")
 const SELECTOR_OVERLAY_ROOT_NAME: StringName = &"SelectorOverlay"
 const SELECTOR_OVERLAY_MESH_NAME: StringName = &"SelectorOverlayMesh"
 const SELECTOR_OVERLAY_ROOT_PATH: NodePath = ^"SelectorOverlay"
@@ -19,6 +18,7 @@ const TILE_NEIGHBOR_SCAN_HEIGHT: float = 9999.0
 var res: TacticsArenaResource
 var _active_overlay_material_cache: Dictionary = {}
 var _attack_area_service
+var _attack_range_service
 
 
 ## Initialize the service with a TacticsArenaResource
@@ -26,6 +26,7 @@ var _attack_area_service
 func _init(_res: TacticsArenaResource) -> void:
 	res = _res
 	_attack_area_service = ATTACK_AREA_SERVICE.new()
+	_attack_range_service = ATTACK_RANGE_SERVICE.new()
 
 
 ## Set up the arena by connecting signals
@@ -238,23 +239,28 @@ func mark_reachable_tiles(arena: TacticsArena, root: TacticsTile, distance: floa
 	_refresh_active_tile_overlays(arena)
 
 
-## Mark attackable tiles within a certain distance from a root tile
+## Mark attackable tiles from either scalar radius or attack profile range pattern.
 ## [param arena] The TacticsArena containing the tiles
 ## [param root] The starting tile
-## [param distance] The maximum attack distance
-func mark_attackable_tiles(arena: TacticsArena, root: TacticsTile, distance: float) -> void:
+## [param distance] The maximum attack distance used by legacy scalar flow
+## [param attack_profile] Optional attack profile with range pattern and min range rules
+func mark_attackable_tiles(arena: TacticsArena, root: TacticsTile, distance: float, attack_profile: AttackProfileResource = null) -> void:
+	if attack_profile != null:
+		_mark_attackable_tiles_by_profile(arena, root, attack_profile)
+		return
+
 	for _t: TacticsTile in arena.get_node("Tiles").get_children():
 		var _has_dist: bool = _t.pf_distance > 0
 		var _reachable: bool = _t.pf_distance <= distance
 		var _is_root: bool = _t == root
-		
+
 		_t.attackable = _has_dist and _reachable or _is_root
 		_t.threatened_move = false
 	_refresh_active_tile_overlays(arena)
 
 
 ## Preview resolved attack area footprint for currently hovered datum.
-func mark_attack_area_preview(arena: TacticsArena, attacker: TacticsPawn, datum_tile: TacticsTile, attack_profile: Resource) -> void:
+func mark_attack_area_preview(arena: TacticsArena, attacker: TacticsPawn, datum_tile: TacticsTile, attack_profile: AttackProfileResource) -> void:
 	for tile_node: Node in arena.get_node("Tiles").get_children():
 		if tile_node is TacticsTile:
 			(tile_node as TacticsTile).attack_area_preview = false
@@ -262,7 +268,15 @@ func mark_attack_area_preview(arena: TacticsArena, attacker: TacticsPawn, datum_
 	if not attacker or not is_instance_valid(attacker):
 		_refresh_active_tile_overlays(arena)
 		return
-	if not attack_profile or not attack_profile.get("area"):
+	if not attack_profile:
+		_refresh_active_tile_overlays(arena)
+		return
+	var attack_errors: Array[String] = attack_profile.validate()
+	if not attack_errors.is_empty():
+		push_error("TacticsArenaService.mark_attack_area_preview: invalid attack profile: %s" % "; ".join(attack_errors))
+		_refresh_active_tile_overlays(arena)
+		return
+	if attack_profile.area == null:
 		_refresh_active_tile_overlays(arena)
 		return
 
@@ -510,13 +524,14 @@ func _build_attack_footprint_for_pawn(attacker: TacticsPawn) -> Dictionary:
 	if not origin_tile or not is_instance_valid(origin_tile):
 		return footprint
 
-	var primary_attack = attacker.stats.get_primary_attack()
+	var primary_attack: AttackProfileResource = attacker.stats.get_primary_attack()
+	if primary_attack != null:
+		return _attack_range_service.resolve_selectable_tile_ids(origin_tile, primary_attack)
+
+	# Legacy fallback for units without attack profile data.
 	var attack_range: int = attacker.stats.get_primary_attack_range()
-	if primary_attack and primary_attack.area and int(primary_attack.area.get("targeting_mode")) == COMBAT_CONFIG.AreaTargetingMode.SELF_CENTERED:
-		attack_range = 0
 	var visited: Dictionary = {origin_tile.get_instance_id(): 0}
 	var queue: Array[TacticsTile] = [origin_tile]
-
 	while not queue.is_empty():
 		var popped: Variant = queue.pop_front()
 		if not (popped is TacticsTile):
@@ -544,6 +559,30 @@ func _build_attack_footprint_for_pawn(attacker: TacticsPawn) -> Dictionary:
 			queue.push_back(neighbor)
 
 	return footprint
+
+
+func _mark_attackable_tiles_by_profile(arena: TacticsArena, root: TacticsTile, attack_profile: AttackProfileResource) -> void:
+	var selectable_tile_ids: Dictionary = {}
+	var attack_errors: Array[String] = attack_profile.validate()
+	if not attack_errors.is_empty():
+		push_error("TacticsArenaService._mark_attackable_tiles_by_profile: invalid attack profile: %s" % "; ".join(attack_errors))
+		for tile_node: Node in arena.get_node("Tiles").get_children():
+			if tile_node is TacticsTile:
+				var tile_clear: TacticsTile = tile_node as TacticsTile
+				tile_clear.attackable = false
+				tile_clear.threatened_move = false
+		_refresh_active_tile_overlays(arena)
+		return
+	if root and is_instance_valid(root):
+		selectable_tile_ids = _attack_range_service.resolve_selectable_tile_ids(root, attack_profile)
+
+	for tile_node: Node in arena.get_node("Tiles").get_children():
+		if not (tile_node is TacticsTile):
+			continue
+		var tile: TacticsTile = tile_node as TacticsTile
+		tile.attackable = selectable_tile_ids.has(tile.get_instance_id())
+		tile.threatened_move = false
+	_refresh_active_tile_overlays(arena)
 
 
 func _get_opponent_pawns(mover: TacticsPawn) -> Array[TacticsPawn]:
