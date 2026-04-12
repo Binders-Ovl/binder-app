@@ -24,8 +24,8 @@ const DEFAULT_BASE_MOVE: int = 2
 const MOVEMENT_STA_DIVISOR: float = 23.0
 const JUMP_DIVISOR: float = 2.0
 
-const ACT_BASE_RECOVERY: float = 2.5
-const ACT_SPD_MULTIPLIER: float = 1.35
+const ACT_BASE_RECOVERY: float = 0.65
+const ACT_SPD_MULTIPLIER: float = 0.35
 
 const CDR_CAP_PERCENT: float = 33.0
 const CDR_CURVE_CONSTANT: float = 70.0

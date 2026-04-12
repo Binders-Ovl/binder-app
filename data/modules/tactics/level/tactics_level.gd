@@ -2,8 +2,7 @@ class_name TacticsLevel
 extends Node3D
 ## Tactics system initialization and continuous active timeline management.
 
-const COMBAT_CONFIG = preload("res://data/models/config/wcombat_config.gd")
-const COMBAT_FORMULA = preload("res://data/models/world/combat/formula/combat_formula.gd")
+const COMBAT_FEEDBACK_LAYER_SCRIPT = preload("res://data/modules/world/combat/feedback/combat_feedback_layer.gd")
 
 #region: --- Props ---
 @export var camera: TacticsCameraResource = load("res://data/models/view/camera/tactics/camera.tres")
@@ -33,6 +32,7 @@ func _ready() -> void:
 	player = $TacticsParticipant/TacticsPlayer
 	opponent = $TacticsParticipant/TacticsOpponent
 	arena = $TacticsArena
+	_ensure_combat_feedback_layer()
 
 	arena.configure_tiles()
 	participant.configure(camera, ui_control)
@@ -59,6 +59,16 @@ func _physics_process(delta: float) -> void:
 func _init_turn() -> void:
 	if participant.is_configured(player) and participant.is_configured(opponent):
 		turn_stage = 1
+
+
+func _ensure_combat_feedback_layer() -> void:
+	if get_node_or_null("CombatFeedbackLayer") != null:
+		return
+	var layer: Node3D = Node3D.new()
+	layer.name = "CombatFeedbackLayer"
+	layer.unique_name_in_owner = true
+	layer.set_script(COMBAT_FEEDBACK_LAYER_SCRIPT)
+	add_child(layer)
 
 func _handle_turn(delta: float) -> void:
 	_tick_all_pawn_energy(delta)
@@ -130,56 +140,12 @@ func _process_enemy_timeline_actions() -> void:
 		return
 
 func _apply_ai_attack(attacker: TacticsPawn, target: TacticsPawn, attack_profile: AttackProfileResource) -> void:
-	var hit_roll: int = randi_range(1, 100)
-	if not COMBAT_FORMULA.roll_hit(attacker.stats.agi, target.stats.dex, hit_roll):
+	if participant == null or participant.serv == null or participant.serv.combat_service == null:
 		return
 
-	var damage: int = _resolve_attack_damage(attacker, target, attack_profile)
-	if damage <= 0:
-		return
-	target.stats.apply_to_curr_health(-damage)
-
-func _resolve_attack_damage(attacker: TacticsPawn, target: TacticsPawn, attack_profile: AttackProfileResource) -> int:
-	var attacker_class = attacker.stats.class_combat
-	var target_class = target.stats.class_combat
-	var type_mod: float = COMBAT_FORMULA.get_type_mod(attack_profile.attack_type, target.stats.get_armor_type())
-	var damage: int
-	if attack_profile.is_magic:
-		damage = COMBAT_FORMULA.calc_magic_damage(
-			attack_profile.base_attack,
-			float(attacker.stats.intt),
-			float(attacker_class.get("int_scale")) if attacker_class else COMBAT_CONFIG.DEFAULT_INT_SCALE,
-			type_mod,
-			attack_profile.elevation_modifier,
-			attack_profile.damage_modifier,
-			float(target_class.get("base_mdef")) if target_class else 0.0,
-			float(target.stats.wis),
-			float(target_class.get("wis_scale")) if target_class else COMBAT_CONFIG.DEFAULT_WIS_SCALE,
-			float(target_class.get("mdef_mod")) if target_class else 1.0
-		)
-	else:
-		damage = COMBAT_FORMULA.calc_physical_damage(
-			attack_profile.base_attack,
-			float(attacker.stats.str),
-			float(attacker_class.get("str_scale")) if attacker_class else COMBAT_CONFIG.DEFAULT_STR_SCALE,
-			type_mod,
-			attack_profile.elevation_modifier,
-			attack_profile.damage_modifier,
-			float(target_class.get("base_pdef")) if target_class else 0.0,
-			float(target.stats.vit),
-			float(target_class.get("vit_scale")) if target_class else COMBAT_CONFIG.DEFAULT_VIT_SCALE,
-			float(target_class.get("pdef_mod")) if target_class else 1.0
-		)
-
-	var crit_chance: float = COMBAT_FORMULA.calc_crit_chance(
-		attacker.stats.agi,
-		float(attacker_class.get("crit_baseline")) if attacker_class else COMBAT_CONFIG.DEFAULT_CRIT_BASELINE,
-		float(attacker_class.get("crit_per_agi")) if attacker_class else COMBAT_CONFIG.DEFAULT_CRIT_PER_AGI
-	)
-	if randf_range(0.0, 100.0) <= crit_chance:
-		var crit_mult: float = float(attacker_class.get("crit_damage_mult")) if attacker_class else COMBAT_CONFIG.DEFAULT_CRIT_DAMAGE_MULT
-		damage = maxi(1, int(round(float(damage) * crit_mult)))
-	return damage
+	var combat_service: TacticsParticipantCombatService = participant.serv.combat_service
+	var result: Dictionary = combat_service.resolve_attack_result(attacker, target, attack_profile)
+	combat_service.apply_attack_outcome(attacker, target, result)
 
 func _nearest_attackable_target(attacker: TacticsPawn, targets: Array) -> TacticsPawn:
 	var attack_footprint: Dictionary = arena.get_attack_footprint(attacker)

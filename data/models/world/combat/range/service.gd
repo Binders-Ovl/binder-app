@@ -1,4 +1,4 @@
-﻿class_name TacticsAttackRangeService
+class_name TacticsAttackRangeService
 extends RefCounted
 ## Runtime resolver for attack target-selection range patterns.
 
@@ -174,4 +174,3 @@ func _step_tile_cardinal(from_tile: TacticsTile, cardinal: Vector2i) -> TacticsT
 	if best_dot < CARDINAL_DOT_MIN:
 		return null
 	return best_tile
-

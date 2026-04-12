@@ -1,5 +1,6 @@
 [gd_resource type="Resource" script_class="StatsResource" format=3 uid="uid://d037u116i7w1p"]
 
+[ext_resource type="Resource" path="res://data/models/lib/combat/class/class_knight.tres" id="1_h0n4v"]
 [ext_resource type="Script" uid="uid://8da4t2q30l84" path="res://data/models/world/stats/stats_res.gd" id="1_stats"]
 
 [resource]
@@ -8,3 +9,4 @@ expertise = "Skeleton"
 strategy = 1
 sprite = "res://assets/textures/actor/mob/chr_pawn_skeleton.png"
 sta = 9
+class_combat = ExtResource("1_h0n4v")

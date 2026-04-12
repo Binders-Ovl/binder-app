@@ -1,5 +1,6 @@
 [gd_resource type="Resource" script_class="StatsResource" format=3 uid="uid://u4kid3dg67w1"]
 
+[ext_resource type="Resource" path="res://data/models/lib/combat/class/class_cleric.tres" id="1_a6ya1"]
 [ext_resource type="Script" uid="uid://8da4t2q30l84" path="res://data/models/world/stats/stats_res.gd" id="1_stats"]
 
 [resource]
@@ -9,3 +10,4 @@ expertise = "Cleric"
 strategy = 4
 sprite = "res://assets/textures/actor/character/chr_pawn_mage.png"
 sta = 11
+class_combat = ExtResource("1_a6ya1")

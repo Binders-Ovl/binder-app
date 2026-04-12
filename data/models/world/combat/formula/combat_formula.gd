@@ -1,4 +1,4 @@
-﻿class_name CombatFormula
+class_name CombatFormula
 extends RefCounted
 
 const COMBAT_CONFIG = preload("res://data/models/config/wcombat_config.gd")
@@ -84,4 +84,3 @@ static func calc_crit_chance(agi_value: int, crit_baseline: float, crit_per_agi:
 
 static func calc_act_recovery_per_sec(spd_value: int) -> float:
 	return COMBAT_CONFIG.ACT_BASE_RECOVERY + float(spd_value) * COMBAT_CONFIG.ACT_SPD_MULTIPLIER
-

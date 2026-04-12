@@ -1,5 +1,6 @@
 [gd_resource type="Resource" script_class="StatsResource" format=3 uid="uid://bob21uidieakh"]
 
+[ext_resource type="Resource" path="res://data/models/lib/combat/class/class_knight.tres" id="1_psyd8"]
 [ext_resource type="Script" uid="uid://8da4t2q30l84" path="res://data/models/world/stats/stats_res.gd" id="1_stats"]
 
 [resource]
@@ -8,3 +9,4 @@ override_name = "Oliver"
 expertise = "Knight"
 sprite = "res://assets/textures/actor/character/chr_pawn_knight.png"
 sta = 20
+class_combat = ExtResource("1_psyd8")

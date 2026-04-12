@@ -11,6 +11,7 @@ var controls: TacticsControlsResource
 var area_service
 var _rng_seeded: bool = false
 var _pending_attack_target_ids: Array[int] = []
+var _feedback_layer: Node = null
 
 const TILE_OCCUPANCY_TOLERANCE: float = 0.6
 
@@ -119,14 +120,10 @@ func _apply_attack_area_damage(attacker: TacticsPawn, datum_tile: TacticsTile, a
 		targets = _resolve_affected_targets(attacker, datum_tile, attack_profile)
 	if targets.is_empty():
 		return
+	var feedback_layer: Node = _resolve_feedback_layer(attacker)
 	for target: TacticsPawn in targets:
-		var result: Dictionary = _compute_attack_result(attacker, target, attack_profile)
-		if not result.get("hit", false):
-			continue
-		var damage: int = int(result.get("damage", 0))
-		if damage <= 0:
-			continue
-		target.stats.apply_to_curr_health(-damage)
+		var result: Dictionary = resolve_attack_result(attacker, target, attack_profile)
+		apply_attack_outcome(attacker, target, result, feedback_layer)
 
 
 func _resolve_affected_targets(attacker: TacticsPawn, datum_tile: TacticsTile, attack_profile: AttackProfileResource) -> Array[TacticsPawn]:
@@ -295,6 +292,66 @@ func _compute_attack_result(attacker: TacticsPawn, target: TacticsPawn, attack_p
 		"crit": did_crit,
 		"damage": damage,
 	}
+
+
+func resolve_attack_result(attacker: TacticsPawn, target: TacticsPawn, attack_profile: AttackProfileResource) -> Dictionary:
+	return _compute_attack_result(attacker, target, attack_profile)
+
+
+func apply_attack_outcome(attacker: TacticsPawn, target: TacticsPawn, result: Dictionary, feedback_layer: Node = null) -> void:
+	var layer: Node = feedback_layer if feedback_layer else _resolve_feedback_layer(attacker)
+	var payload: Dictionary = _build_feedback_payload(attacker, target, result)
+	if layer and layer.has_method("show_result"):
+		layer.call("show_result", payload)
+
+	if bool(result.get("hit", false)):
+		var damage: int = int(result.get("damage", 0))
+		if damage > 0:
+			target.stats.apply_to_curr_health(-damage)
+
+
+func _build_feedback_payload(attacker: TacticsPawn, target: TacticsPawn, result: Dictionary) -> Dictionary:
+	var did_hit: bool = bool(result.get("hit", false))
+	var did_crit: bool = did_hit and bool(result.get("crit", false))
+	var damage: int = int(result.get("damage", 0))
+	var kind: String = "damage" if did_hit else "miss"
+	var popup_text: String = str(maxi(0, damage)) if did_hit else "MISS"
+	var anchor_position: Vector3 = target.get_damage_anchor_position()
+
+	return {
+		"target": target,
+		"attacker": attacker,
+		"hit": did_hit,
+		"crit": did_crit,
+		"damage": damage,
+		"world_position": anchor_position,
+		"kind": kind,
+		"text": popup_text,
+	}
+
+
+func _resolve_feedback_layer(attacker: TacticsPawn) -> Node:
+	if _feedback_layer and is_instance_valid(_feedback_layer):
+		return _feedback_layer
+	if attacker == null or not is_instance_valid(attacker):
+		return null
+
+	var arena_node: TacticsArena = attacker.get_node_or_null("%TacticsArena")
+	if arena_node and is_instance_valid(arena_node):
+		var level_root: Node = arena_node.get_parent()
+		if level_root:
+			var node: Node = level_root.get_node_or_null("CombatFeedbackLayer")
+			if node and node.has_method("show_result"):
+				_feedback_layer = node
+				return _feedback_layer
+
+	var scene: Node = attacker.get_tree().current_scene
+	if scene:
+		var found: Node = scene.find_child("CombatFeedbackLayer", true, false)
+		if found and found.has_method("show_result"):
+			_feedback_layer = found
+			return _feedback_layer
+	return null
 
 
 func _seed_rng_once() -> void:

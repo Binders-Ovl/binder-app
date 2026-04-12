@@ -16,6 +16,8 @@ var serv: TacticsPawnService
 @onready var expertise: String = $Expertise/Stats.expertise
 ## Reference to the TacticsPawnSprite node, handling visual representation
 @onready var character: TacticsPawnSprite = $Character
+## Preferred world-space anchor for combat feedback text
+@onready var damage_anchor: Marker3D = $Character/DamageAnchor
 
 
 ## Initializes the TacticsPawn node
@@ -46,6 +48,21 @@ func center() -> bool:
 ## @param v: Whether to show (true) or hide (false) the stats
 func show_pawn_stats(v: bool) -> void:
 	$Character/CharacterUI.visible = v
+
+
+## Returns the preferred combat text anchor node
+func get_damage_anchor() -> Node3D:
+	if damage_anchor and is_instance_valid(damage_anchor):
+		return damage_anchor
+	return character
+
+
+## Returns world-space position for combat text popups
+func get_damage_anchor_position() -> Vector3:
+	var anchor: Node3D = get_damage_anchor()
+	if anchor and is_instance_valid(anchor):
+		return anchor.global_position
+	return global_position + Vector3(0.0, 1.8, 0.0)
 
 
 ## Gets the tile the pawn is currently on

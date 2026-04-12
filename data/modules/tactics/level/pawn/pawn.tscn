@@ -1,8 +1,8 @@
-[gd_scene load_steps=18 format=3 uid="uid://6eofg7n4asn5"]
+[gd_scene format=3 uid="uid://6eofg7n4asn5"]
 
-[ext_resource type="Script" path="res://data/modules/tactics/level/pawn/pawn.gd" id="1"]
+[ext_resource type="Script" uid="uid://bvp04u4pjlc24" path="res://data/modules/tactics/level/pawn/pawn.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://bob12its3i651" path="res://assets/textures/actor/chr_pawn_placeholder.png" id="2"]
-[ext_resource type="Script" path="res://data/models/world/combat/participant/pawn/service/sprite.gd" id="3_cbwp5"]
+[ext_resource type="Script" uid="uid://b3jpa14u32grl" path="res://data/models/world/combat/participant/pawn/service/sprite.gd" id="3_cbwp5"]
 
 [sub_resource type="CapsuleShape3D" id="13"]
 height = 2.15
@@ -59,10 +59,10 @@ tracks/0/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_4xm2j"]
 _data = {
-"DAMAGE": SubResource("17"),
-"IDLE": SubResource("4"),
-"JUMP": SubResource("6"),
-"RESET": SubResource("5")
+&"DAMAGE": SubResource("17"),
+&"IDLE": SubResource("4"),
+&"JUMP": SubResource("6"),
+&"RESET": SubResource("5")
 }
 
 [sub_resource type="AnimationNodeAnimation" id="18"]
@@ -93,20 +93,20 @@ states/JUMP/node = SubResource("10")
 states/JUMP/position = Vector2(512, 133.312)
 transitions = ["IDLE", "JUMP", SubResource("11"), "JUMP", "IDLE", SubResource("12"), "IDLE", "DAMAGE", SubResource("19"), "DAMAGE", "IDLE", SubResource("20")]
 
-[node name="Pawn" type="CharacterBody3D"]
+[node name="Pawn" type="CharacterBody3D" unique_id=1004327479]
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("1")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1201037528]
 transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0.6, 0)
 shape = SubResource("13")
 
-[node name="Tile" type="RayCast3D" parent="."]
+[node name="Tile" type="RayCast3D" parent="." unique_id=961694408]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 1, 2.08165e-12)
 target_position = Vector3(0, -2.1, 0)
 
-[node name="Character" type="Sprite3D" parent="."]
+[node name="Character" type="Sprite3D" parent="." unique_id=1502336249]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.602, 0)
 billboard = 1
 alpha_cut = 2
@@ -114,21 +114,22 @@ texture = ExtResource("2")
 vframes = 2
 script = ExtResource("3_cbwp5")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="Character"]
-reset_on_save = false
-libraries = {
-"": SubResource("AnimationLibrary_4xm2j")
-}
+[node name="DamageAnchor" type="Marker3D" parent="Character"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
 
-[node name="AnimationTree" type="AnimationTree" parent="Character"]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Character" unique_id=19440388]
+reset_on_save = false
+libraries/ = SubResource("AnimationLibrary_4xm2j")
+
+[node name="AnimationTree" type="AnimationTree" parent="Character" unique_id=983925471]
 tree_root = SubResource("7")
 anim_player = NodePath("../AnimationPlayer")
 
-[node name="CharacterUI" type="Node3D" parent="Character"]
+[node name="CharacterUI" type="Node3D" parent="Character" unique_id=153327779]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.602, 0)
 visible = false
 
-[node name="NameLabel" type="Label3D" parent="Character/CharacterUI"]
+[node name="NameLabel" type="Label3D" parent="Character/CharacterUI" unique_id=473132363]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.75, 0)
 billboard = 1
 outline_modulate = Color(0, 0, 0, 0)
@@ -136,21 +137,21 @@ text = "PawnName"
 font_size = 42
 outline_size = 0
 
-[node name="HealthLabel" type="Label3D" parent="Character/CharacterUI"]
+[node name="HealthLabel" type="Label3D" parent="Character/CharacterUI" unique_id=580360747]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 billboard = 1
 text = "HP [##########] 100/100"
 font_size = 24
 outline_size = 0
 
-[node name="ManaLabel" type="Label3D" parent="Character/CharacterUI"]
+[node name="ManaLabel" type="Label3D" parent="Character/CharacterUI" unique_id=1070114762]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
 billboard = 1
 text = "MP [########--] 18/20"
 font_size = 24
 outline_size = 0
 
-[node name="ActLabel" type="Label3D" parent="Character/CharacterUI"]
+[node name="ActLabel" type="Label3D" parent="Character/CharacterUI" unique_id=853004329]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 billboard = 1
 text = "ACT [######----] 62/100"
