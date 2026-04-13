@@ -47,7 +47,7 @@ func _physics_process(delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	# Handle input events
-	serv.handle_input(event)
+	serv.handle_input(event, self)
 #endregion
 
 #region: --- Methods ---
@@ -109,6 +109,10 @@ func select_pawn_to_attack() -> void:
 ## Initiates attack type selection.
 func select_attack_type() -> void:
 	serv.select_attack_type(self)
+
+## Attempts to reselect a different active pawn with direct click.
+func try_reselect_active_pawn(player: TacticsPlayer, allow_tile_cancel: bool = false) -> void:
+	serv.try_reselect_active_pawn(player, self, allow_tile_cancel)
 
 
 ## Handles the player's intention to move

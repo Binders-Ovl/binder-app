@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cwljv7xrebu6h" path="res://data/modules/world/combat/feedback/combat_text_popup.gd" id="1"]
 [ext_resource type="FontFile" uid="uid://c1d3x2qnj2jku" path="res://data/modules/world/combat/feedback/Silver.ttf" id="2_udbs3"]
+[ext_resource type="Texture2D" path="res://data/modules/world/combat/feedback/guard_shield.svg" id="3_shield"]
 
 [node name="CombatTextPopup" type="Node2D" unique_id=1128966984]
 script = ExtResource("1")
@@ -16,3 +17,7 @@ offset_bottom = 100.0
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="GuardIcon" type="Sprite2D" parent="." unique_id=352771140]
+visible = false
+texture = ExtResource("3_shield")

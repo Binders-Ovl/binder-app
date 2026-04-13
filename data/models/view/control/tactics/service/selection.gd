@@ -28,11 +28,25 @@ func select_pawn(player: TacticsPlayer, ctrl: TacticsControls) -> void:
 
 	if Input.is_action_just_pressed("ui_accept") and ctrl.curr_pawn.can_act():
 		if ctrl.curr_pawn in player.get_children():
-			t_cam.target = ctrl.curr_pawn
-			participant.curr_pawn = ctrl.curr_pawn
-			participant.clear_attack_selection()
-			controls.set_actions_menu_visibility(true, participant.curr_pawn)
-			participant.stage = participant.STAGE_SHOW_ACTIONS
+			_activate_player_pawn(ctrl, ctrl.curr_pawn)
+
+
+func try_reselect_active_pawn(player: TacticsPlayer, ctrl: TacticsControls, allow_tile_cancel: bool = false) -> void:
+	if not participant.curr_pawn or not is_instance_valid(participant.curr_pawn) or not participant.curr_pawn.is_alive():
+		return
+	if not Input.is_action_just_pressed("ui_accept"):
+		return
+
+	var hovered_pawn: TacticsPawn = input_service.get_3d_canvas_mouse_position(2, ctrl) as TacticsPawn
+	var hovered_tile: TacticsTile = input_service.get_3d_canvas_mouse_position(1, ctrl) if hovered_pawn == null else hovered_pawn.get_tile()
+	arena.mark_hover_tile(hovered_tile)
+
+	if hovered_pawn and hovered_pawn in player.get_children() and hovered_pawn.can_act():
+		_activate_player_pawn(ctrl, hovered_pawn)
+		return
+
+	if allow_tile_cancel and hovered_tile and hovered_pawn == null:
+		_cancel_active_selection(ctrl)
 
 func select_attack_type(ctrl: TacticsControls) -> void:
 	if not participant.curr_pawn or not is_instance_valid(participant.curr_pawn):
@@ -267,3 +281,39 @@ func _clear_attack_preview() -> void:
 	var arena_node: TacticsArena = participant.curr_pawn.get_node_or_null("%TacticsArena")
 	if arena_node:
 		arena_node.mark_attack_area_preview(participant.curr_pawn, null, null)
+
+
+func _activate_player_pawn(ctrl: TacticsControls, pawn: TacticsPawn) -> void:
+	if not pawn or not is_instance_valid(pawn):
+		return
+
+	if participant.curr_pawn and is_instance_valid(participant.curr_pawn) and participant.curr_pawn != pawn:
+		controls.set_actions_menu_visibility(false, participant.curr_pawn)
+		controls.set_attack_types_menu_visibility(false, participant.curr_pawn)
+		participant.curr_pawn.show_pawn_stats(false)
+
+	_clear_attack_preview()
+	participant.attackable_pawn = null
+	participant.clear_attack_selection()
+	participant.curr_pawn = pawn
+	ctrl.curr_pawn = pawn
+	pawn.show_pawn_stats(true)
+	t_cam.target = pawn
+	controls.set_attack_types_menu_visibility(false, pawn)
+	controls.set_actions_menu_visibility(true, pawn)
+	participant.stage = participant.STAGE_SHOW_ACTIONS
+
+
+func _cancel_active_selection(ctrl: TacticsControls) -> void:
+	_clear_attack_preview()
+	participant.attackable_pawn = null
+	participant.clear_attack_selection()
+
+	if participant.curr_pawn and is_instance_valid(participant.curr_pawn):
+		controls.set_actions_menu_visibility(false, participant.curr_pawn)
+		controls.set_attack_types_menu_visibility(false, participant.curr_pawn)
+		participant.curr_pawn.show_pawn_stats(false)
+
+	participant.curr_pawn = null
+	ctrl.curr_pawn = null
+	participant.stage = participant.STAGE_SELECT_PAWN

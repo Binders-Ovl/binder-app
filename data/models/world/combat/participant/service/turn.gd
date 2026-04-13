@@ -50,6 +50,12 @@ func handle_player_turn(delta: float, player: TacticsPlayer, participant: Tactic
 			res.display_opponent_stats = false
 			res.clear_attack_selection()
 			res.stage = res.STAGE_SELECT_PAWN
+		else:
+			var allow_tile_cancel: bool = res.stage in [
+				res.STAGE_SHOW_ACTIONS,
+				res.STAGE_SELECT_ATTACK_TYPE,
+			]
+			controls.try_reselect_active_pawn(player, allow_tile_cancel)
 
 	controls.move_camera(delta)
 	controls.set_actions_menu_visibility(

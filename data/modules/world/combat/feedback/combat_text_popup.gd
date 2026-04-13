@@ -2,6 +2,7 @@ class_name CombatTextPopup
 extends Node2D
 # README-INFO: Placeholder kinds are supported here (`hp_heal`, `mana_heal`, `mana_damage`, `guard`).
 # Keep payload-driven styling centralized in this file for future IMPR-004B extensions.
+# README-INFO: Guard marker uses icon-based rendering for Web/WASM reliability.
 
 signal finished(popup: Node2D)
 
@@ -28,9 +29,12 @@ signal finished(popup: Node2D)
 @export var outline_size: int = 6
 @export var outline_color: Color = Color(0.02, 0.02, 0.04, 0.95)
 @export var guard_outline_color: Color = Color(0.2, 0.14, 0.08, 0.98)
+@export var guard_icon_size_px: float = 22.0
+@export var guard_icon_gap_px: float = 8.0
 @export var popup_font: Font
 
 @onready var label: Label = $Label
+@onready var guard_icon: Sprite2D = $GuardIcon
 
 var _camera: Camera3D = null
 var _world_position: Vector3 = Vector3.ZERO
@@ -81,8 +85,9 @@ func _apply_text_style(kind: String, explicit_text: String, damage: int, did_cri
 	if popup_font != null:
 		label.add_theme_font_override("font", popup_font)
 	label.add_theme_constant_override("outline_size", outline_size)
-	label.modulate.a = 1.0
+	_set_visual_alpha(1.0)
 	var effective_outline_color: Color = outline_color
+	_set_guard_icon_visible(false)
 
 	match kind:
 		"miss":
@@ -102,10 +107,12 @@ func _apply_text_style(kind: String, explicit_text: String, damage: int, did_cri
 			label.modulate = mana_damage_color
 			label.add_theme_font_size_override("font_size", damage_font_size)
 		"guard", "defense":
-			label.text = _format_guard_text(explicit_text, damage)
+			label.text = _format_guard_text_value(explicit_text, damage)
 			label.modulate = guard_color
 			effective_outline_color = guard_outline_color
 			label.add_theme_font_size_override("font_size", damage_font_size)
+			_set_guard_icon_visible(true)
+			_layout_guard_icon(damage_font_size)
 		_:
 			label.text = explicit_text if not explicit_text.is_empty() else str(damage)
 			label.modulate = crit_color if did_crit else damage_color
@@ -125,18 +132,36 @@ func _format_signed_text(explicit_text: String, value: int, sign: String) -> Str
 	return base
 
 
-func _format_guard_text(explicit_text: String, value: int) -> String:
+func _format_guard_text_value(explicit_text: String, value: int) -> String:
 	var base: String = explicit_text.strip_edges()
 	if base.is_empty():
 		base = str(maxi(0, value))
-	var shield: String = _shield_symbol()
-	if base.find(shield) != -1:
-		return base
-	return "%s%s" % [base, shield]
+	return base
 
 
-func _shield_symbol() -> String:
-	return char(0x1F6E1)
+func _layout_guard_icon(font_size: int) -> void:
+	if guard_icon == null:
+		return
+	if guard_icon.texture == null:
+		return
+	var icon_px: float = maxf(8.0, guard_icon_size_px)
+	var tex_size: Vector2 = guard_icon.texture.get_size()
+	var tex_w: float = maxf(1.0, tex_size.x)
+	var tex_h: float = maxf(1.0, tex_size.y)
+	guard_icon.scale = Vector2(icon_px / tex_w, icon_px / tex_h)
+	var font: Font = label.get_theme_font("font")
+	var text_px: float = float(font_size) * 0.55 * float(label.text.length())
+	if font != null:
+		text_px = font.get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	guard_icon.position = Vector2((text_px * 0.5) + guard_icon_gap_px + (icon_px * 0.5), 0.0)
+
+
+func _set_guard_icon_visible(v: bool) -> void:
+	if guard_icon == null:
+		return
+	guard_icon.visible = v
+	if v:
+		guard_icon.modulate = Color(1.0, 1.0, 1.0, 1.0)
 
 
 func _play_tween(kind: String, did_crit: bool) -> void:
@@ -153,7 +178,7 @@ func _play_tween(kind: String, did_crit: bool) -> void:
 	_active_tween.tween_property(self, "scale", Vector2.ONE * target_scale, pop_duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_active_tween.parallel().tween_method(_set_screen_offset_y, 0.0, rise_to, rise_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_active_tween.tween_method(_set_screen_offset_y, rise_to, settle_to, settle_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	_active_tween.parallel().tween_property(label, "modulate:a", 0.0, fade_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_active_tween.parallel().tween_method(_set_visual_alpha, 1.0, 0.0, fade_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_active_tween.finished.connect(_on_tween_finished, CONNECT_ONE_SHOT)
 
 
@@ -162,8 +187,20 @@ func _set_screen_offset_y(v: float) -> void:
 	_update_screen_position()
 
 
+func _set_visual_alpha(v: float) -> void:
+	var a: float = clampf(v, 0.0, 1.0)
+	var c: Color = label.modulate
+	c.a = a
+	label.modulate = c
+	if guard_icon and guard_icon.visible:
+		var ic: Color = guard_icon.modulate
+		ic.a = a
+		guard_icon.modulate = ic
+
+
 func _on_tween_finished() -> void:
 	_active_tween = null
+	_set_guard_icon_visible(false)
 	set_process(false)
 	emit_signal("finished", self)
 

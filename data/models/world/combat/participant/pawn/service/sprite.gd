@@ -6,6 +6,8 @@ extends Sprite3D
 var animator: AnimationNodeStateMachinePlayback = null
 ## Current frame of the sprite animation
 var curr_frame: int = 0
+## Tracks jump edge transitions so each jump step can replay the clip once.
+var _was_jumping_last_frame: bool = false
 ## Current feedback overlay amount applied on top of action tint.
 var _feedback_strength: float = 0.0
 ## Current feedback tint color.
@@ -76,6 +78,7 @@ func setup(stats: Stats, expertise: String) -> void:
 	
 	animator.start("IDLE")
 	animation_tree.active = true
+	_was_jumping_last_frame = false
 	texture = load(stats.sprite) as Texture2D
 	character_ui_name_label.text = stats.override_name if stats.override_name else expertise
 	_feedback_pivot_home = feedback_pivot.position if feedback_pivot else Vector3.ZERO
@@ -92,8 +95,19 @@ func setup(stats: Stats, expertise: String) -> void:
 func start_animator(move_direction: Vector3, is_jumping: bool) -> void:
 	if move_direction == Vector3.ZERO:
 		animator.travel("IDLE")
-	elif is_jumping:
-		animator.travel("JUMP")
+		_was_jumping_last_frame = false
+		return
+
+	if is_jumping:
+		if not _was_jumping_last_frame:
+			animator.start("JUMP")
+		elif animator.get_current_node() != &"JUMP":
+			animator.travel("JUMP")
+		_was_jumping_last_frame = true
+		return
+
+	animator.travel("IDLE")
+	_was_jumping_last_frame = false
 
 
 ## Rotates the sprite to face the camera and selects the appropriate frame

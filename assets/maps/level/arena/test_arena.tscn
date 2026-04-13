@@ -2831,7 +2831,6 @@ light_volumetric_fog_energy = 0.0
 directional_shadow_mode = 0
 
 [node name="Tiles" type="Node3D" parent="." unique_id=1109299479]
-visible = false
 
 [node name="Tile" type="MeshInstance3D" parent="Tiles" unique_id=819477228]
 transform = Transform3D(1.01, 0, 0, 0, 1.01, 0, 0, 0, 1.01, -3.50836, 4.5, 1.5)

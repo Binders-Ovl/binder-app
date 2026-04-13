@@ -48,6 +48,7 @@ func setup(ctrl: TacticsControls) -> void:
 		controls.connect("called_select_pawn_to_attack", ctrl.select_pawn_to_attack)
 		controls.connect("called_select_attack_type", ctrl.select_attack_type)
 		controls.connect("called_select_new_location", ctrl.select_new_location)
+		controls.connect("called_try_reselect_active_pawn", ctrl.try_reselect_active_pawn)
 	if not t_cam:
 		push_error("TacticsCamera needs a CameraResource (T Cam) from /data/models/view/camera/tactics/")
 	if not arena:
@@ -61,8 +62,22 @@ func physics_process(_delta: float, ctrl: TacticsControls) -> void:
 
 
 ## Handles input events.
-func handle_input(event: InputEvent) -> void:
+func handle_input(event: InputEvent, _ctrl: TacticsControls) -> void:
 	input_service.handle_input(event)
+	if event.is_action_pressed("ui_cancel"):
+		var key_event: InputEventKey = event as InputEventKey
+		if key_event and key_event.echo:
+			return
+		var can_cancel_from_stage: bool = participant.stage in [
+			participant.STAGE_SHOW_ACTIONS,
+			participant.STAGE_SHOW_MOVEMENTS,
+			participant.STAGE_SELECT_LOCATION,
+			participant.STAGE_SELECT_ATTACK_TYPE,
+			participant.STAGE_DISPLAY_TARGETS,
+			participant.STAGE_SELECT_ATTACK_TARGET,
+		]
+		if can_cancel_from_stage:
+			pawn_selection_service.player_wants_to_cancel()
 
 
 ## Delegates setting actions menu visibility to the UI service.
@@ -82,6 +97,10 @@ func select_pawn(player: TacticsPlayer, ctrl: TacticsControls) -> void:
 ## Delegates new location selection to the pawn selection service.
 func select_new_location(ctrl: TacticsControls) -> void:
 	pawn_selection_service.select_new_location(ctrl)
+
+## Attempts active pawn reselection by direct click.
+func try_reselect_active_pawn(player: TacticsPlayer, ctrl: TacticsControls, allow_tile_cancel: bool = false) -> void:
+	pawn_selection_service.try_reselect_active_pawn(player, ctrl, allow_tile_cancel)
 
 
 ## Delegates pawn attack selection to the pawn selection service.

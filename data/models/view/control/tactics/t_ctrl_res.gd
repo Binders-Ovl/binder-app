@@ -16,6 +16,8 @@ signal called_select_pawn_to_attack
 signal called_select_attack_type
 ## Signal emitted when a new location needs to be selected.
 signal called_select_new_location
+## Signal emitted when an active pawn reselection check should run.
+signal called_try_reselect_active_pawn
 ## Signal emitted when the cursor shape needs to be set to "move".
 signal called_set_cursor_shape_to_move
 ## Signal emitted when the cursor shape needs to be set to "arrow".
@@ -67,6 +69,10 @@ func select_attack_type() -> void:
 ## Selects a new location.
 func select_new_location() -> void:
 	called_select_new_location.emit()
+
+## Attempts to replace the active pawn by direct click.
+func try_reselect_active_pawn(player: TacticsPlayer, allow_tile_cancel: bool = false) -> void:
+	called_try_reselect_active_pawn.emit(player, allow_tile_cancel)
 
 
 ## Sets the cursor shape to "move".
