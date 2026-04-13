@@ -69,6 +69,7 @@ static var active_timeline: Dictionary = {
 static var action_cost: Dictionary = {
 	"move": 70.0,
 	"attack": WCOMBAT_CONFIG.DEFAULT_ATTACK_ACT_COST,
+	"guard": WCOMBAT_CONFIG.DEFAULT_GUARD_ACT_COST,
 	"item": 20.0,
 	"skill": 50.0,
 }

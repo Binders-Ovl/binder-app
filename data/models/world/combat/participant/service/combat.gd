@@ -60,6 +60,7 @@ func attack_pawn(delta: float, is_player: bool) -> void:
 			_clear_pending_attack_targets()
 			res.stage = res.STAGE_SHOW_ACTIONS if is_player else res.STAGE_SELECT_PAWN
 			return
+		acting_pawn.break_guard()
 		_pending_attack_target_ids = _snapshot_affected_target_ids(acting_pawn, datum_tile, attack_profile)
 
 	var hit_frame_time: float = TacticsPawnResource.MIN_TIME_FOR_ATTACK / 4.0
@@ -237,8 +238,14 @@ func _compute_attack_result(attacker: TacticsPawn, target: TacticsPawn, attack_p
 	var attacker_class = attacker_stats.class_combat
 	var target_class = target_stats.class_combat
 
+	var hit_chance: float = COMBAT_FORMULA.calc_hit_chance(float(attacker_stats.agi), float(target_stats.dex))
+	hit_chance = COMBAT_FORMULA.apply_guard_to_hit(
+		hit_chance,
+		float(target_class.guard_hit_mult) if target_class else 1.0,
+		_is_target_guarding(target)
+	)
 	var hit_roll: int = randi_range(1, 100)
-	var did_hit: bool = COMBAT_FORMULA.roll_hit(attacker_stats.agi, target_stats.dex, hit_roll)
+	var did_hit: bool = hit_roll <= int(round(hit_chance))
 	if not did_hit:
 		return {
 			"hit": false,
@@ -287,10 +294,26 @@ func _compute_attack_result(attacker: TacticsPawn, target: TacticsPawn, attack_p
 		var crit_mult: float = float(attacker_class.get("crit_damage_mult")) if attacker_class else COMBAT_CONFIG.DEFAULT_CRIT_DAMAGE_MULT
 		damage = maxi(1, int(round(float(damage) * crit_mult)))
 
+	var guarded_hit: bool = damage > 0 and _is_target_guarding(target)
+	if guarded_hit:
+		if attack_profile.is_magic:
+			damage = COMBAT_FORMULA.apply_guard_to_magic_damage(
+				damage,
+				float(target_class.guard_m_dmg_mult) if target_class else 1.0,
+				true
+			)
+		else:
+			damage = COMBAT_FORMULA.apply_guard_to_physical_damage(
+				damage,
+				float(target_class.guard_p_dmg_mult) if target_class else 1.0,
+				true
+			)
+
 	return {
 		"hit": true,
 		"crit": did_crit,
 		"damage": damage,
+		"guarded": guarded_hit,
 	}
 
 
@@ -300,21 +323,33 @@ func resolve_attack_result(attacker: TacticsPawn, target: TacticsPawn, attack_pr
 
 func apply_attack_outcome(attacker: TacticsPawn, target: TacticsPawn, result: Dictionary, feedback_layer: Node = null) -> void:
 	var layer: Node = feedback_layer if feedback_layer else _resolve_feedback_layer(attacker)
-	var payload: Dictionary = _build_feedback_payload(attacker, target, result)
+	var resolved_result: Dictionary = result.duplicate()
+	var did_hit: bool = bool(resolved_result.get("hit", false))
+	var guarded_hit: bool = did_hit and bool(resolved_result.get("guarded", false))
+
+	var payload: Dictionary = _build_feedback_payload(attacker, target, resolved_result)
 	if layer and layer.has_method("show_result"):
 		layer.call("show_result", payload)
 
-	if bool(result.get("hit", false)):
-		var damage: int = int(result.get("damage", 0))
+	if did_hit:
+		var damage: int = int(resolved_result.get("damage", 0))
 		if damage > 0:
 			target.stats.apply_to_curr_health(-damage)
 
 
 func _build_feedback_payload(attacker: TacticsPawn, target: TacticsPawn, result: Dictionary) -> Dictionary:
+	# README-INFO: Payload `kind`/`text` is the extension seam for future feedback placeholders
+	# (for example mana heal/damage variants) while keeping combat authority centralized here.
 	var did_hit: bool = bool(result.get("hit", false))
 	var did_crit: bool = did_hit and bool(result.get("crit", false))
+	var guarded_hit: bool = did_hit and bool(result.get("guarded", false))
 	var damage: int = int(result.get("damage", 0))
-	var kind: String = "damage" if did_hit else "miss"
+	var kind: String = "miss"
+	if did_hit:
+		kind = "guard" if guarded_hit else "damage"
+	var visual_kind: String = kind
+	if did_crit and not guarded_hit:
+		visual_kind = "crit"
 	var popup_text: String = str(maxi(0, damage)) if did_hit else "MISS"
 	var anchor_position: Vector3 = target.get_damage_anchor_position()
 
@@ -326,8 +361,16 @@ func _build_feedback_payload(attacker: TacticsPawn, target: TacticsPawn, result:
 		"damage": damage,
 		"world_position": anchor_position,
 		"kind": kind,
+		"visual_kind": visual_kind,
+		"guarded": guarded_hit,
 		"text": popup_text,
 	}
+
+
+func _is_target_guarding(target: TacticsPawn) -> bool:
+	if target == null or not is_instance_valid(target):
+		return false
+	return target.is_guarding()
 
 
 func _resolve_feedback_layer(attacker: TacticsPawn) -> Node:

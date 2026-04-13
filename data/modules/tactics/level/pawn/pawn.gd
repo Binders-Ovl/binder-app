@@ -15,9 +15,10 @@ var serv: TacticsPawnService
 ## The expertise (class or type) of the pawn
 @onready var expertise: String = $Expertise/Stats.expertise
 ## Reference to the TacticsPawnSprite node, handling visual representation
-@onready var character: TacticsPawnSprite = $Character
+@onready var feedback_pivot: Node3D = $FeedbackPivot
+@onready var character: TacticsPawnSprite = $FeedbackPivot/Character
 ## Preferred world-space anchor for combat feedback text
-@onready var damage_anchor: Marker3D = $Character/DamageAnchor
+@onready var damage_anchor: Marker3D = $FeedbackPivot/Character/DamageAnchor
 
 
 ## Initializes the TacticsPawn node
@@ -47,7 +48,7 @@ func center() -> bool:
 ##
 ## @param v: Whether to show (true) or hide (false) the stats
 func show_pawn_stats(v: bool) -> void:
-	$Character/CharacterUI.visible = v
+	character.get_node("CharacterUI").visible = v
 
 
 ## Returns the preferred combat text anchor node
@@ -63,6 +64,12 @@ func get_damage_anchor_position() -> Vector3:
 	if anchor and is_instance_valid(anchor):
 		return anchor.global_position
 	return global_position + Vector3(0.0, 1.8, 0.0)
+
+
+## Plays a scene-authored combat feedback effect on the pawn.
+func play_feedback(kind: String, source: Node3D = null) -> void:
+	if character and is_instance_valid(character):
+		character.play_feedback(kind, source)
 
 
 ## Gets the tile the pawn is currently on
@@ -99,6 +106,54 @@ func can_pawn_attack() -> bool:
 ## @return: Whether the pawn can move or attack, and is alive
 func can_act() -> bool:
 	return (res.can_move or res.can_attack) and is_alive() and not res.is_moving and not res.is_attacking
+
+
+func is_guarding() -> bool:
+	return res.is_guarding
+
+
+func set_guarding(value: bool) -> void:
+	res.set_guarding(value)
+
+
+func can_activate_guard() -> bool:
+	if not is_alive() or res.is_moving or res.is_attacking or res.is_guarding:
+		return false
+	if stats.curr_act < float(TacticsConfig.action_cost.guard):
+		return false
+	var class_combat: ClassCombatResource = stats.class_combat
+	if class_combat == null:
+		return false
+	return class_combat.guard_time > 0.0 and res.guard_cooldown_remaining <= 0.0
+
+
+func activate_guard() -> bool:
+	if not can_activate_guard():
+		return false
+	var tile: TacticsTile = get_tile()
+	var class_combat: ClassCombatResource = stats.class_combat
+	if tile == null or class_combat == null:
+		return false
+	res.activate_guard(class_combat.guard_time, class_combat.guard_cooldown, tile.get_instance_id())
+	return true
+
+
+func break_guard() -> void:
+	res.deactivate_guard()
+
+
+func tick_guard(delta: float) -> void:
+	if res.guard_cooldown_remaining > 0.0:
+		res.guard_cooldown_remaining = maxf(0.0, res.guard_cooldown_remaining - delta)
+	if not res.is_guarding:
+		return
+	var curr_tile: TacticsTile = get_tile()
+	if curr_tile == null or curr_tile.get_instance_id() != res.guard_anchor_tile_id:
+		break_guard()
+		return
+	res.guard_remaining_time = maxf(0.0, res.guard_remaining_time - delta)
+	if res.guard_remaining_time <= 0.0:
+		break_guard()
 
 
 ## Resets the pawn's turn state

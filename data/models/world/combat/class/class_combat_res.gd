@@ -25,6 +25,13 @@ const COMBAT_CONFIG = preload("res://data/models/config/wcombat_config.gd")
 @export var crit_per_agi: float = COMBAT_CONFIG.DEFAULT_CRIT_PER_AGI
 @export var crit_damage_mult: float = COMBAT_CONFIG.DEFAULT_CRIT_DAMAGE_MULT
 
+@export_category("Guard")
+@export var guard_time: float = 0.0
+@export var guard_cooldown: float = 0.0
+@export var guard_p_dmg_mult: float = 1.0
+@export var guard_m_dmg_mult: float = 1.0
+@export var guard_hit_mult: float = 1.0
+
 func validate() -> Array[String]:
 	var errors: Array[String] = []
 	if hp_per_vit <= 0.0:
@@ -39,5 +46,13 @@ func validate() -> Array[String]:
 		errors.append("ClassCombatResource.crit_per_agi cannot be negative.")
 	if crit_damage_mult < 1.0:
 		errors.append("ClassCombatResource.crit_damage_mult should be >= 1.0.")
+	if guard_time < 0.0:
+		errors.append("ClassCombatResource.guard_time cannot be negative.")
+	if guard_cooldown < 0.0:
+		errors.append("ClassCombatResource.guard_cooldown cannot be negative.")
+	if guard_p_dmg_mult < 0.0 or guard_m_dmg_mult < 0.0:
+		errors.append("ClassCombatResource guard damage multipliers cannot be negative.")
+	if guard_hit_mult < 0.0:
+		errors.append("ClassCombatResource.guard_hit_mult cannot be negative.")
 	return errors
 

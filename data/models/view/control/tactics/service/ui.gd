@@ -34,7 +34,7 @@ func set_actions_menu_visibility(v: bool, p: TacticsPawn, ctrl: TacticsControls)
 	# Update action button states based on pawn's capabilities
 	ctrl.get_node("HBox/Actions/Move").disabled = not p.res.can_move
 	ctrl.get_node("HBox/Actions/Attack").disabled = not p.res.can_attack
-	ctrl.get_node("HBox/Actions/Guard").disabled = false
+	ctrl.get_node("HBox/Actions/Guard").disabled = not p.can_activate_guard()
 	ctrl.get_node("HBox/Actions/Debug_next_turn").disabled = false
 	ctrl.get_node("HBox/Actions/Cancel").disabled = false
 

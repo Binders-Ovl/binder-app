@@ -84,3 +84,18 @@ static func calc_crit_chance(agi_value: int, crit_baseline: float, crit_per_agi:
 
 static func calc_act_recovery_per_sec(spd_value: int) -> float:
 	return COMBAT_CONFIG.ACT_BASE_RECOVERY + float(spd_value) * COMBAT_CONFIG.ACT_SPD_MULTIPLIER
+
+static func apply_guard_to_hit(hit_chance: float, guard_hit_mult: float, is_guarding: bool) -> float:
+	if not is_guarding:
+		return hit_chance
+	return clampf(hit_chance * guard_hit_mult, COMBAT_CONFIG.HIT_MIN, COMBAT_CONFIG.HIT_MAX)
+
+static func apply_guard_to_physical_damage(damage: int, guard_p_dmg_mult: float, is_guarding: bool) -> int:
+	if not is_guarding:
+		return damage
+	return maxi(1, int(round(float(damage) * guard_p_dmg_mult)))
+
+static func apply_guard_to_magic_damage(damage: int, guard_m_dmg_mult: float, is_guarding: bool) -> int:
+	if not is_guarding:
+		return damage
+	return maxi(1, int(round(float(damage) * guard_m_dmg_mult)))

@@ -1,9 +1,12 @@
 [gd_scene format=3 uid="uid://dqjeow8wfua3l"]
 
 [ext_resource type="Script" uid="uid://cwljv7xrebu6h" path="res://data/modules/world/combat/feedback/combat_text_popup.gd" id="1"]
+[ext_resource type="FontFile" uid="uid://c1d3x2qnj2jku" path="res://data/modules/world/combat/feedback/Silver.ttf" id="2_udbs3"]
 
 [node name="CombatTextPopup" type="Node2D" unique_id=1128966984]
 script = ExtResource("1")
+outline_size = 10
+popup_font = ExtResource("2_udbs3")
 
 [node name="Label" type="Label" parent="." unique_id=651089566]
 offset_left = -400.0

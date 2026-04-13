@@ -1,7 +1,9 @@
 [gd_resource type="Resource" script_class="StatsResource" format=3 uid="uid://d037u116i7w1p"]
 
-[ext_resource type="Resource" path="res://data/models/lib/combat/class/class_knight.tres" id="1_h0n4v"]
+[ext_resource type="Resource" uid="uid://rgs3wbkfcluj" path="res://data/models/lib/combat/class/class_knight.tres" id="1_h0n4v"]
+[ext_resource type="Resource" uid="uid://bttd05tjd6wbq" path="res://data/models/lib/combat/attack/atk_skeleton_bolt.tres" id="1_smw8s"]
 [ext_resource type="Script" uid="uid://8da4t2q30l84" path="res://data/models/world/stats/stats_res.gd" id="1_stats"]
+[ext_resource type="Resource" uid="uid://doqy57ehn11n0" path="res://data/models/lib/combat/attack/atk_knight_slash.tres" id="2_rfmm0"]
 
 [resource]
 script = ExtResource("1_stats")
@@ -10,3 +12,5 @@ strategy = 1
 sprite = "res://assets/textures/actor/mob/chr_pawn_skeleton.png"
 sta = 9
 class_combat = ExtResource("1_h0n4v")
+attack_1 = ExtResource("1_smw8s")
+attack_2 = ExtResource("2_rfmm0")

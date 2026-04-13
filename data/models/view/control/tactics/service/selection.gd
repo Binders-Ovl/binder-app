@@ -146,8 +146,18 @@ func player_wants_to_guard() -> void:
 		participant.display_opponent_stats = false
 	_clear_attack_preview()
 	participant.clear_attack_selection()
-	participant.curr_pawn.end_pawn_turn()
-	participant.stage = participant.STAGE_SELECT_PAWN
+	if not participant.curr_pawn or not is_instance_valid(participant.curr_pawn):
+		return
+	if not participant.curr_pawn.can_activate_guard():
+		return
+	if not participant.curr_pawn.spend_act(float(TacticsConfig.action_cost.guard)):
+		return
+	if not participant.curr_pawn.activate_guard():
+		participant.curr_pawn.stats.curr_act = minf(participant.curr_pawn.stats.max_act, participant.curr_pawn.stats.curr_act + float(TacticsConfig.action_cost.guard))
+		participant.curr_pawn.refresh_action_state()
+		return
+	participant.curr_pawn.refresh_action_state()
+	participant.stage = participant.STAGE_SHOW_ACTIONS
 
 func player_wants_to_skip_turn() -> void:
 	if participant.display_opponent_stats:
@@ -181,6 +191,7 @@ func select_new_location(ctrl: TacticsControls) -> void:
 			return
 		if not acting_pawn.spend_act(float(TacticsConfig.action_cost.move)):
 			return
+		acting_pawn.break_guard()
 		acting_pawn.res.mark_move_transaction(acting_pawn.global_position)
 		acting_pawn.res.pathfinding_tilestack = path
 		ctrl.curr_pawn = acting_pawn

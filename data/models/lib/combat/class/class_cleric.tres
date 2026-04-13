@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="ClassCombatResource" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="ClassCombatResource" format=3 uid="uid://d38myc122ocxw"]
 
-[ext_resource type="Script" path="res://data/models/world/combat/class/class_combat_res.gd" id="1_class"]
+[ext_resource type="Script" uid="uid://b5a55r52n7hiw" path="res://data/models/world/combat/class/class_combat_res.gd" id="1_class"]
 
 [resource]
 script = ExtResource("1_class")
@@ -12,10 +12,13 @@ str_scale = 0.5
 int_scale = 0.95
 vit_scale = 1.0
 wis_scale = 1.25
-base_pdef = 0.0
 base_mdef = 1.5
 pdef_mod = 0.9
 mdef_mod = 1.1
-crit_baseline = 3.0
 crit_per_agi = 0.1
 crit_damage_mult = 1.45
+guard_time = 2.0
+guard_cooldown = 4.0
+guard_p_dmg_mult = 0.88
+guard_m_dmg_mult = 0.72
+guard_hit_mult = 0.95

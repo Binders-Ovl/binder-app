@@ -106,7 +106,9 @@ shape = SubResource("13")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 1, 2.08165e-12)
 target_position = Vector3(0, -2.1, 0)
 
-[node name="Character" type="Sprite3D" parent="." unique_id=1502336249]
+[node name="FeedbackPivot" type="Node3D" parent="." unique_id=1879193222]
+
+[node name="Character" type="Sprite3D" parent="FeedbackPivot" unique_id=1502336249]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.602, 0)
 billboard = 1
 alpha_cut = 2
@@ -114,22 +116,32 @@ texture = ExtResource("2")
 vframes = 2
 script = ExtResource("3_cbwp5")
 
-[node name="DamageAnchor" type="Marker3D" parent="Character"]
+[node name="FlashOverlay" type="Sprite3D" parent="FeedbackPivot/Character" unique_id=312114366]
+transform = Transform3D(1.01, 0, 0, 0, 1.01, 0, 0, 0, 1.01, 0, 0, 0.0025)
+visible = false
+modulate = Color(1, 1, 1, 0)
+billboard = 1
+no_depth_test = true
+render_priority = 1
+texture = ExtResource("2")
+vframes = 2
+
+[node name="DamageAnchor" type="Marker3D" parent="FeedbackPivot/Character" unique_id=806242539]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="Character" unique_id=19440388]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="FeedbackPivot/Character" unique_id=19440388]
 reset_on_save = false
 libraries/ = SubResource("AnimationLibrary_4xm2j")
 
-[node name="AnimationTree" type="AnimationTree" parent="Character" unique_id=983925471]
+[node name="AnimationTree" type="AnimationTree" parent="FeedbackPivot/Character" unique_id=983925471]
 tree_root = SubResource("7")
 anim_player = NodePath("../AnimationPlayer")
 
-[node name="CharacterUI" type="Node3D" parent="Character" unique_id=153327779]
+[node name="CharacterUI" type="Node3D" parent="FeedbackPivot/Character" unique_id=153327779]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.602, 0)
 visible = false
 
-[node name="NameLabel" type="Label3D" parent="Character/CharacterUI" unique_id=473132363]
+[node name="NameLabel" type="Label3D" parent="FeedbackPivot/Character/CharacterUI" unique_id=473132363]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.75, 0)
 billboard = 1
 outline_modulate = Color(0, 0, 0, 0)
@@ -137,21 +149,21 @@ text = "PawnName"
 font_size = 42
 outline_size = 0
 
-[node name="HealthLabel" type="Label3D" parent="Character/CharacterUI" unique_id=580360747]
+[node name="HealthLabel" type="Label3D" parent="FeedbackPivot/Character/CharacterUI" unique_id=580360747]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 billboard = 1
 text = "HP [##########] 100/100"
 font_size = 24
 outline_size = 0
 
-[node name="ManaLabel" type="Label3D" parent="Character/CharacterUI" unique_id=1070114762]
+[node name="ManaLabel" type="Label3D" parent="FeedbackPivot/Character/CharacterUI" unique_id=1070114762]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
 billboard = 1
 text = "MP [########--] 18/20"
 font_size = 24
 outline_size = 0
 
-[node name="ActLabel" type="Label3D" parent="Character/CharacterUI" unique_id=853004329]
+[node name="ActLabel" type="Label3D" parent="FeedbackPivot/Character/CharacterUI" unique_id=853004329]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 billboard = 1
 text = "ACT [######----] 62/100"

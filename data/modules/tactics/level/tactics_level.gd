@@ -84,9 +84,11 @@ func _handle_turn(delta: float) -> void:
 
 func _tick_all_pawn_energy(delta: float) -> void:
 	for pawn: TacticsPawn in player.get_children():
+		pawn.tick_guard(delta)
 		pawn.tick_act(delta)
 		pawn.refresh_action_state()
 	for pawn: TacticsPawn in opponent.get_children():
+		pawn.tick_guard(delta)
 		pawn.tick_act(delta)
 		pawn.refresh_action_state()
 

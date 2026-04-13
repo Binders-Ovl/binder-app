@@ -1,5 +1,7 @@
 class_name CombatTextPopup
 extends Node2D
+# README-INFO: Placeholder kinds are supported here (`hp_heal`, `mana_heal`, `mana_damage`, `guard`).
+# Keep payload-driven styling centralized in this file for future IMPR-004B extensions.
 
 signal finished(popup: Node2D)
 
@@ -14,14 +16,18 @@ signal finished(popup: Node2D)
 @export var miss_scale: float = 0.96
 @export var start_scale_factor: float = 0.84
 @export var damage_color: Color = Color(1.0, 0.96, 0.84, 1.0)
-@export var crit_color: Color = Color(1.0, 0.88, 0.35, 1.0)
+@export var crit_color: Color = Color(1.0, 0.3, 0.3, 1.0)
 @export var miss_color: Color = Color(0.88, 0.94, 1.0, 1.0)
 @export var heal_color: Color = Color(0.38, 1.0, 0.5, 1.0)
+@export var mana_heal_color: Color = Color(0.34, 0.92, 1.0, 1.0)
+@export var mana_damage_color: Color = Color(0.58, 0.67, 1.0, 1.0)
+@export var guard_color: Color = Color(0.93, 0.8, 0.41, 1.0)
 @export var damage_font_size: int = 32
 @export var crit_font_size: int = 40
 @export var miss_font_size: int = 28
 @export var outline_size: int = 6
 @export var outline_color: Color = Color(0.02, 0.02, 0.04, 0.95)
+@export var guard_outline_color: Color = Color(0.2, 0.14, 0.08, 0.98)
 @export var popup_font: Font
 
 @onready var label: Label = $Label
@@ -74,23 +80,63 @@ func _update_screen_position() -> void:
 func _apply_text_style(kind: String, explicit_text: String, damage: int, did_crit: bool) -> void:
 	if popup_font != null:
 		label.add_theme_font_override("font", popup_font)
-	label.add_theme_color_override("font_outline_color", outline_color)
 	label.add_theme_constant_override("outline_size", outline_size)
 	label.modulate.a = 1.0
+	var effective_outline_color: Color = outline_color
 
 	match kind:
 		"miss":
 			label.text = explicit_text if not explicit_text.is_empty() else "MISS"
 			label.modulate = miss_color
 			label.add_theme_font_size_override("font_size", miss_font_size)
-		"heal":
-			label.text = explicit_text if not explicit_text.is_empty() else "+%d" % damage
+		"heal", "hp_heal":
+			label.text = _format_signed_text(explicit_text, damage, "+")
 			label.modulate = heal_color
+			label.add_theme_font_size_override("font_size", damage_font_size)
+		"mana_heal", "mp_heal", "mana_restore":
+			label.text = _format_signed_text(explicit_text, damage, "+")
+			label.modulate = mana_heal_color
+			label.add_theme_font_size_override("font_size", damage_font_size)
+		"mana_damage", "mp_damage", "mana_burn", "poison", "poison_mana", "poison_mp":
+			label.text = _format_signed_text(explicit_text, damage, "-")
+			label.modulate = mana_damage_color
+			label.add_theme_font_size_override("font_size", damage_font_size)
+		"guard", "defense":
+			label.text = _format_guard_text(explicit_text, damage)
+			label.modulate = guard_color
+			effective_outline_color = guard_outline_color
 			label.add_theme_font_size_override("font_size", damage_font_size)
 		_:
 			label.text = explicit_text if not explicit_text.is_empty() else str(damage)
 			label.modulate = crit_color if did_crit else damage_color
 			label.add_theme_font_size_override("font_size", crit_font_size if did_crit else damage_font_size)
+	label.add_theme_color_override("font_outline_color", effective_outline_color)
+
+
+func _format_signed_text(explicit_text: String, value: int, sign: String) -> String:
+	var normalized_sign: String = "-" if sign == "-" else "+"
+	var base: String = explicit_text.strip_edges()
+	if base.is_empty():
+		return "%s%d" % [normalized_sign, maxi(0, value)]
+	if base.begins_with("+") or base.begins_with("-"):
+		return base
+	if base.is_valid_int():
+		return "%s%d" % [normalized_sign, absi(base.to_int())]
+	return base
+
+
+func _format_guard_text(explicit_text: String, value: int) -> String:
+	var base: String = explicit_text.strip_edges()
+	if base.is_empty():
+		base = str(maxi(0, value))
+	var shield: String = _shield_symbol()
+	if base.find(shield) != -1:
+		return base
+	return "%s%s" % [base, shield]
+
+
+func _shield_symbol() -> String:
+	return char(0x1F6E1)
 
 
 func _play_tween(kind: String, did_crit: bool) -> void:

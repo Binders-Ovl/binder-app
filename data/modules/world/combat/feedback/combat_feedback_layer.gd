@@ -43,6 +43,7 @@ func show_result(result: Dictionary) -> void:
 	var render_payload: Dictionary = result.duplicate()
 	render_payload["world_position"] = spawn_position
 	popup.call("show_result", render_payload, camera)
+	_dispatch_visual_feedback(target, result)
 
 
 func _acquire_popup() -> Node2D:
@@ -150,3 +151,13 @@ func _ensure_canvas_layer() -> void:
 	layer.layer = 5
 	add_child(layer)
 	_canvas_layer = layer
+
+
+func _dispatch_visual_feedback(target: TacticsPawn, result: Dictionary) -> void:
+	if target == null or not is_instance_valid(target):
+		return
+	if not target.has_method("play_feedback"):
+		return
+
+	var visual_kind: String = String(result.get("visual_kind", result.get("kind", "damage")))
+	target.call("play_feedback", visual_kind, result.get("attacker", null))

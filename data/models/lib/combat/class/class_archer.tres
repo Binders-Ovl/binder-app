@@ -1,21 +1,22 @@
-[gd_resource type="Resource" script_class="ClassCombatResource" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="ClassCombatResource" format=3 uid="uid://cdb670bciy8pe"]
 
-[ext_resource type="Script" path="res://data/models/world/combat/class/class_combat_res.gd" id="1_class"]
+[ext_resource type="Script" uid="uid://b5a55r52n7hiw" path="res://data/models/world/combat/class/class_combat_res.gd" id="1_class"]
 
 [resource]
 script = ExtResource("1_class")
 class_name_label = "Archer"
 armor_type = 2
-hp_per_vit = 8.0
 mp_per_wis = 4.0
-str_scale = 0.8
 int_scale = 0.65
 vit_scale = 0.95
 wis_scale = 1.0
-base_pdef = 0.0
-base_mdef = 0.0
 pdef_mod = 0.85
 mdef_mod = 0.9
 crit_baseline = 4.0
 crit_per_agi = 0.18
 crit_damage_mult = 1.6
+guard_time = 1.4
+guard_cooldown = 3.5
+guard_p_dmg_mult = 0.9
+guard_m_dmg_mult = 0.92
+guard_hit_mult = 0.84

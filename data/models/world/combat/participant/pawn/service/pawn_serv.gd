@@ -34,7 +34,7 @@ func setup(pawn: TacticsPawn) -> void:
 ## @param pawn: The TacticsPawn to process
 ## @param delta: Time elapsed since the last frame
 func process(pawn: TacticsPawn, delta: float) -> void:
-	pawn.get_node("Character").rotate_sprite(pawn.global_basis)
+	pawn.character.rotate_sprite(pawn.global_basis)
 	movement.move_along_path(pawn, delta)
 	animation.start_animator(pawn)
 	ui.tint_when_unable_to_act(pawn)

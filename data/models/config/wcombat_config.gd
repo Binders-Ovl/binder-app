@@ -31,6 +31,7 @@ const CDR_CAP_PERCENT: float = 33.0
 const CDR_CURVE_CONSTANT: float = 70.0
 
 const DEFAULT_ATTACK_ACT_COST: float = 30.0
+const DEFAULT_GUARD_ACT_COST: float = 20.0
 
 enum AttackType { BLUNT, SLASH, STAB, PIERCE, MAGIC, IMPACT, HACK }
 enum ArmorType { ARMORLESS, TUNIC, LIGHT, MEDIUM, HEAVY }

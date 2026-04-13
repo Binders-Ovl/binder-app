@@ -30,6 +30,14 @@ var is_jumping: bool = false
 var is_moving: bool = false
 ## Whether the pawn is currently attacking
 var is_attacking: bool = false
+## Whether the pawn is currently in guard stance.
+var is_guarding: bool = false
+## Remaining active guard time in seconds.
+var guard_remaining_time: float = 0.0
+## Remaining guard cooldown in seconds.
+var guard_cooldown_remaining: float = 0.0
+## Tile instance id where guard was activated.
+var guard_anchor_tile_id: int = 0
 
 ## The direction the pawn is moving in
 var move_direction: Vector3 = Vector3.ZERO
@@ -70,6 +78,8 @@ func end_pawn_turn() -> void:
 func set_moving(value: bool) -> void:
 	is_moving = value
 	if value:
+		deactivate_guard()
+	if value:
 		pawn_moved.emit()
 
 
@@ -78,8 +88,28 @@ func set_moving(value: bool) -> void:
 ## @param value: Whether the pawn can attack or not
 func set_attacking(value: bool) -> void:
 	is_attacking = value
+	if value:
+		deactivate_guard()
 	if not value:
 		pawn_attacked.emit()
+
+
+func set_guarding(value: bool) -> void:
+	is_guarding = value
+	if not value:
+		guard_remaining_time = 0.0
+		guard_anchor_tile_id = 0
+
+
+func activate_guard(duration: float, cooldown: float, anchor_tile_id: int) -> void:
+	is_guarding = true
+	guard_remaining_time = maxf(0.0, duration)
+	guard_cooldown_remaining = maxf(0.0, cooldown)
+	guard_anchor_tile_id = anchor_tile_id
+
+
+func deactivate_guard() -> void:
+	set_guarding(false)
 
 
 func mark_move_transaction(origin_position: Vector3) -> void:

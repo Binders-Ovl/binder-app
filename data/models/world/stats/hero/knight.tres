@@ -1,12 +1,19 @@
 [gd_resource type="Resource" script_class="StatsResource" format=3 uid="uid://bob21uidieakh"]
 
-[ext_resource type="Resource" path="res://data/models/lib/combat/class/class_knight.tres" id="1_psyd8"]
+[ext_resource type="Resource" path="res://data/models/lib/combat/attack/atk_knight_hack.tres" id="1_hqs84"]
+[ext_resource type="Resource" uid="uid://rgs3wbkfcluj" path="res://data/models/lib/combat/class/class_knight.tres" id="1_psyd8"]
 [ext_resource type="Script" uid="uid://8da4t2q30l84" path="res://data/models/world/stats/stats_res.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://data/models/lib/combat/attack/atk_cleric_smite.tres" id="2_kxrj7"]
+[ext_resource type="Resource" uid="uid://doqy57ehn11n0" path="res://data/models/lib/combat/attack/atk_knight_slash.tres" id="3_0jip1"]
 
 [resource]
 script = ExtResource("1_stats")
 override_name = "Oliver"
 expertise = "Knight"
 sprite = "res://assets/textures/actor/character/chr_pawn_knight.png"
+vit = 1500
 sta = 20
 class_combat = ExtResource("1_psyd8")
+attack_1 = ExtResource("1_hqs84")
+attack_2 = ExtResource("2_kxrj7")
+attack_3 = ExtResource("3_0jip1")
