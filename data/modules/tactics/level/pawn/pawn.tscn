@@ -3,6 +3,10 @@
 [ext_resource type="Script" uid="uid://bvp04u4pjlc24" path="res://data/modules/tactics/level/pawn/pawn.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://bob12its3i651" path="res://assets/textures/actor/chr_pawn_placeholder.png" id="2"]
 [ext_resource type="Script" uid="uid://b3jpa14u32grl" path="res://data/models/world/combat/participant/pawn/service/sprite.gd" id="3_cbwp5"]
+[ext_resource type="Script" uid="uid://bbwy5sopj6utb" path="res://ui/pawn/hud/hp_bar.gd" id="4_hpbar"]
+[ext_resource type="Script" uid="uid://b2eahm6f3pu3t" path="res://ui/pawn/hud/act_bar.gd" id="5_actbar"]
+[ext_resource type="Script" uid="uid://d0b1bo8ykoty7" path="res://ui/pawn/hud/guard_icon.gd" id="6_guardicon"]
+[ext_resource type="Script" uid="uid://dplw3jr6pj7iq" path="res://ui/pawn/hud/hud_display.gd" id="7_huddisplay"]
 
 [sub_resource type="CapsuleShape3D" id="13"]
 height = 2.15
@@ -93,6 +97,9 @@ states/JUMP/node = SubResource("10")
 states/JUMP/position = Vector2(512, 133.312)
 transitions = ["IDLE", "JUMP", SubResource("11"), "JUMP", "IDLE", SubResource("12"), "IDLE", "DAMAGE", SubResource("19"), "DAMAGE", "IDLE", SubResource("20")]
 
+[sub_resource type="ViewportTexture" id="ViewportTexture_pawn_hud"]
+viewport_path = NodePath("FeedbackPivot/Character/CharacterUI/HUDRoot")
+
 [node name="Pawn" type="CharacterBody3D" unique_id=1004327479]
 collision_layer = 2
 collision_mask = 0
@@ -139,33 +146,64 @@ anim_player = NodePath("../AnimationPlayer")
 
 [node name="CharacterUI" type="Node3D" parent="FeedbackPivot/Character" unique_id=153327779]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.602, 0)
-visible = false
 
-[node name="NameLabel" type="Label3D" parent="FeedbackPivot/Character/CharacterUI" unique_id=473132363]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.75, 0)
+[node name="HUDDisplay" type="Sprite3D" parent="FeedbackPivot/Character/CharacterUI" unique_id=473132363]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.58, 0)
+pixel_size = 0.006
 billboard = 1
-outline_modulate = Color(0, 0, 0, 0)
+no_depth_test = true
+render_priority = 2
+texture = SubResource("ViewportTexture_pawn_hud")
+script = ExtResource("7_huddisplay")
+target_screen_height_px = 0.7
+
+[node name="HUDRoot" type="SubViewport" parent="FeedbackPivot/Character/CharacterUI" unique_id=580360747]
+transparent_bg = true
+size = Vector2i(224, 76)
+render_target_update_mode = 4
+
+[node name="NameLabel" type="Label" parent="FeedbackPivot/Character/CharacterUI/HUDRoot" unique_id=1070114762]
+offset_right = 224.0
+offset_bottom = 20.0
+theme_override_colors/font_color = Color(1, 0.94, 0.74, 1)
+theme_override_colors/font_outline_color = Color(0.055, 0.031, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
 text = "PawnName"
-font_size = 42
-outline_size = 0
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="HealthLabel" type="Label3D" parent="FeedbackPivot/Character/CharacterUI" unique_id=580360747]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-billboard = 1
-text = "HP [##########] 100/100"
-font_size = 24
-outline_size = 0
+[node name="BarCluster" type="Control" parent="FeedbackPivot/Character/CharacterUI/HUDRoot" unique_id=853004329]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5.0
+offset_top = 22.0
+offset_right = 203.0
+offset_bottom = 70.0
 
-[node name="ManaLabel" type="Label3D" parent="FeedbackPivot/Character/CharacterUI" unique_id=1070114762]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
-billboard = 1
-text = "MP [########--] 18/20"
-font_size = 24
-outline_size = 0
+[node name="GuardIcon" type="Control" parent="FeedbackPivot/Character/CharacterUI/HUDRoot/BarCluster" unique_id=230069116]
+anchors_preset = 0
+offset_top = 0.0
+offset_right = 48.0
+offset_bottom = 48.0
+script = ExtResource("6_guardicon")
 
-[node name="ActLabel" type="Label3D" parent="FeedbackPivot/Character/CharacterUI" unique_id=853004329]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-billboard = 1
-text = "ACT [######----] 62/100"
-font_size = 24
-outline_size = 0
+[node name="BarsColumn" type="Control" parent="FeedbackPivot/Character/CharacterUI/HUDRoot/BarCluster" unique_id=53149102]
+anchors_preset = 0
+offset_left = 54.0
+offset_top = 10.0
+offset_right = 198.0
+offset_bottom = 38.0
+
+[node name="HPBar" type="Control" parent="FeedbackPivot/Character/CharacterUI/HUDRoot/BarCluster/BarsColumn" unique_id=1823704264]
+anchors_preset = 0
+offset_right = 144.0
+offset_bottom = 14.0
+script = ExtResource("4_hpbar")
+
+[node name="ACTBar" type="Control" parent="FeedbackPivot/Character/CharacterUI/HUDRoot/BarCluster/BarsColumn" unique_id=240731404]
+anchors_preset = 0
+offset_top = 17.0
+offset_right = 144.0
+offset_bottom = 27.0
+script = ExtResource("5_actbar")

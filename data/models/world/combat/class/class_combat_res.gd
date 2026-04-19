@@ -1,4 +1,4 @@
-﻿class_name ClassCombatResource
+class_name ClassCombatResource
 extends Resource
 
 const COMBAT_CONFIG = preload("res://data/models/config/wcombat_config.gd")
@@ -55,4 +55,3 @@ func validate() -> Array[String]:
 	if guard_hit_mult < 0.0:
 		errors.append("ClassCombatResource.guard_hit_mult cannot be negative.")
 	return errors
-

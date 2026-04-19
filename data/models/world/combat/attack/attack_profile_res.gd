@@ -1,4 +1,4 @@
-﻿class_name AttackProfileResource
+class_name AttackProfileResource
 extends Resource
 
 const COMBAT_CONFIG = preload("res://data/models/config/wcombat_config.gd")
@@ -47,4 +47,3 @@ func validate() -> Array[String]:
 		for area_error: String in area_errors:
 			errors.append("AttackProfileResource.area -> %s" % area_error)
 	return errors
-

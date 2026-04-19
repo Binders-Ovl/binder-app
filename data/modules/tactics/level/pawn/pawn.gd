@@ -112,6 +112,15 @@ func is_guarding() -> bool:
 	return res.is_guarding
 
 
+func get_guard_ratio_remaining() -> float:
+	if not res.is_guarding:
+		return 0.0
+	var class_combat: ClassCombatResource = stats.class_combat
+	if class_combat == null or class_combat.guard_time <= 0.0:
+		return 0.0
+	return clampf(res.guard_remaining_time / class_combat.guard_time, 0.0, 1.0)
+
+
 func set_guarding(value: bool) -> void:
 	res.set_guarding(value)
 

@@ -33,8 +33,8 @@ var _overlay_base_scale: Vector3 = Vector3.ONE
 @onready var feedback_pivot: Node3D = get_parent() as Node3D
 ## Shared overlay sprite used for visible hit flash without shaders.
 @onready var flash_overlay: Sprite3D = $FlashOverlay
-## Reference to the Label3D node displaying the pawn's name
-@onready var character_ui_name_label: Label3D = $CharacterUI/NameLabel
+## Reference to the HUD label displaying the pawn's name
+@onready var character_ui_name_label: Label = $CharacterUI/HUDRoot/NameLabel
 
 @export_group("Feedback")
 @export var action_ready_tint: Color = Color(1.0, 1.0, 1.0, 1.0)
